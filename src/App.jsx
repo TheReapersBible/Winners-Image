@@ -69,7 +69,6 @@ export default function App() {
 
   const chatRef = useRef(null);
 
-  // 🔥 Track app open
   useEffect(() => {
     posthog.capture("app_opened");
 
@@ -103,39 +102,59 @@ export default function App() {
   async function sendMessage() {
     if (!input.trim()) return;
 
-    // 🔥 Track user message
+    console.log("SEND MESSAGE CLICKED");
+
     posthog.capture("chat_message_sent", {
       length: input.length
     });
 
-    const newMessages = [...messages, { sender: "user", text: input }];
+    const userText = input;
+
+    // show user message immediately
+    setMessages((prev) => [
+      ...prev,
+      { sender: "user", text: userText }
+    ]);
+
+    setInput("");
 
     try {
-      const res = await fetch("http://localhost:3001/api/ai", {
+      const res = await fetch("https://ai-backend-fyyw.onrender.com/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: input,
+          message: userText,
           profile: userProfile
         })
       });
 
+      console.log("STATUS:", res.status);
+
+      if (!res.ok) {
+        throw new Error("Server error: " + res.status);
+      }
+
       const data = await res.json();
 
-      newMessages.push({
-        sender: "ai",
-        text: data.reply
-      });
+      setMessages((prev) => [
+        ...prev,
+        { sender: "ai", text: data.reply }
+      ]);
 
-      setMessages(newMessages);
-      setInput("");
-
-      // 🔥 Track AI response
       posthog.capture("ai_response_received");
 
       setTimeout(() => speak(data.reply), 200);
+
     } catch (err) {
-      console.error(err);
+      console.error("FETCH ERROR:", err);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "ai",
+          text: "Something went wrong. Try again."
+        }
+      ]);
     }
   }
 
@@ -230,14 +249,12 @@ export default function App() {
               <button
                 style={btn}
                 onClick={() => {
-                  // 🔥 Track onboarding completion
                   posthog.capture("onboarding_completed", {
                     reason: userProfile.reason,
                     gender: userProfile.gender,
                     age: userProfile.age
                   });
 
-                  // 🔥 Identify user
                   posthog.identify(
                     userProfile.reason + "-" + Date.now(),
                     {
