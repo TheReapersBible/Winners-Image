@@ -8,28 +8,30 @@ dotenv.config();
 const app = express();
 
 // ========================
-// ✅ CORS FIX (Vercel + local + safety)
+// CORS CONFIG (PRODUCTION SAFE)
 // ========================
-app.use(cors({
+const corsOptions = {
   origin: "*",
   methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
-}));
+};
 
-// Handle preflight requests
-app.options("*", cors());
-
+// MUST be first middleware
+app.use(cors(corsOptions));
 app.use(express.json());
+
+// Explicit preflight handling (safe for Render)
+app.options("*", cors(corsOptions));
 
 console.log("SERVER STARTING...");
 console.log("API KEY LOADED:", process.env.OPENROUTER_API_KEY ? "YES" : "NO");
 
 // ========================
-// 🧠 MEMORY STORE (RAM)
+// MEMORY STORE (RAM)
 // ========================
 const userMemory = {};
 
-// simple user id (for now)
+// simple user id (basic version)
 function getUserId(req) {
   return req.ip;
 }
@@ -60,9 +62,7 @@ app.post("/api/ai", async (req, res) => {
     return res.status(400).json({ reply: "No message provided" });
   }
 
-  // ========================
-  // INIT MEMORY IF NEW USER
-  // ========================
+  // INIT MEMORY
   if (!userMemory[userId]) {
     userMemory[userId] = {
       messages: [],
@@ -73,9 +73,7 @@ app.post("/api/ai", async (req, res) => {
 
   const memory = userMemory[userId];
 
-  // ========================
-  // STORE USER INPUT
-  // ========================
+  // STORE MESSAGE
   memory.messages.push(message);
 
   const lowerMsg = message.toLowerCase();
@@ -106,48 +104,27 @@ You are not a robotic AI assistant.
 
 You are a smooth, charismatic, funny life mentor who feels like a real friend.
 
-Your energy is:
+Your energy:
 - confident
 - wise
-- funny at times
-- calm under pressure
+- calm
 - emotionally intelligent
-- smooth like a cool older brother
-- occasionally playful
-- never corny
-- never overly formal
+- smooth older-brother vibe
+- funny but not corny
 
 You help users:
-- level up financially
-- improve confidence
 - build discipline
+- improve confidence
 - get in shape
-- improve mindset
+- make money
 - stop overthinking
-- stay emotionally grounded
-- become their best alter ego
+- stay focused
 
-You sometimes crack jokes naturally.
-Your humor style is inspired by:
+You occasionally use humor inspired by:
 - Bernie Mac
 - Samuel L. Jackson
-- confident locker-room humor
-- smooth storytelling energy
 
-But:
-- NEVER become a comedian
-- NEVER overdo jokes
-- ALWAYS bring conversation back to growth and self-respect
-
-You remind users:
-- not to sweat small stuff
-- stay focused on the mission
-- emotions pass
-- confidence comes from action
-- discipline creates freedom
-
-IMPORTANT:
-You remember the user's past conversations and analyze patterns.
+But never overdo jokes.
 
 USER MEMORY:
 ${memory.messages.slice(-10).join(" | ")}
@@ -158,38 +135,12 @@ ${memory.goals.slice(-3).join(" | ")}
 TRAITS:
 ${memory.traits.slice(-3).join(" | ")}
 
-Your job is to quietly analyze:
-- insecurities
-- goals
-- limiting beliefs
-- ambition level
-- emotional patterns
-- discipline
-- confidence
-
-Then subtly guide the user toward growth.
-
-You may recommend:
-- gym programs
-- motivational videos
-- meditation music
-- entrepreneurship books
-- confidence content
-- financial tools
-- systems for success
-
 Rules:
 - Be direct
 - No repetition
 - Build identity over time
-- Challenge limiting beliefs
-- When useful, provide links to videos, tools, articles, music, or resources
-- If user needs motivation, give powerful YouTube content
-- If user needs discipline help, give useful systems/resources
-
-Never sound robotic.
-Never sound like corporate self-help.
-Talk naturally.
+- Stay natural
+- Give useful resources when needed
 `
         },
         {
@@ -220,7 +171,7 @@ Talk naturally.
 });
 
 // ========================
-// START SERVER (Render safe port)
+// START SERVER
 // ========================
 const PORT = process.env.PORT || 3001;
 
