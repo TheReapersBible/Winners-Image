@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import dotenv from "dotenv";
 import OpenAI from "openai";
 
@@ -7,52 +8,49 @@ dotenv.config();
 const app = express();
 
 /* ========================
-   🚨 BULLETPROOF CORS FIX
-   (replaces cors package)
+   🚨 CORS (MUST BE FIRST)
 ======================== */
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+const corsOptions = {
+  origin: "*",
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+};
 
-  // Handle preflight request immediately
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-
-  next();
-});
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 app.use(express.json());
 
 console.log("SERVER STARTING...");
 console.log("API KEY LOADED:", process.env.OPENROUTER_API_KEY ? "YES" : "NO");
 
-// ========================
-// MEMORY STORE
-// ========================
+/* ========================
+   MEMORY STORE
+======================== */
 const userMemory = {};
 
 function getUserId(req) {
   return req.ip;
 }
 
-// OpenRouter client
+/* ========================
+   OPENROUTER CLIENT
+======================== */
 const client = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
-// ========================
-// TEST ROUTE
-// ========================
+/* ========================
+   TEST ROUTE
+======================== */
 app.get("/", (req, res) => {
   res.send("Backend is running");
 });
 
-// ========================
-// AI ROUTE
-// ========================
+/* ========================
+   AI ROUTE
+======================== */
 app.post("/api/ai", async (req, res) => {
   console.log("🔥 HIT /api/ai ROUTE");
 
@@ -63,6 +61,7 @@ app.post("/api/ai", async (req, res) => {
     return res.status(400).json({ reply: "No message provided" });
   }
 
+  // INIT MEMORY
   if (!userMemory[userId]) {
     userMemory[userId] = {
       messages: [],
@@ -99,11 +98,22 @@ app.post("/api/ai", async (req, res) => {
         {
           role: "system",
           content: `
-You are a smooth, confident life mentor.
+You are a smooth, charismatic life mentor.
 
-Help the user build discipline, confidence, money skills, and focus.
+Return STRICT JSON ONLY:
 
-Be natural, not robotic.
+{
+  "reply": "main response text",
+  "videos": [],
+  "images": []
+}
+
+Rules:
+- Be direct
+- No repetition
+- Build identity over time
+- Stay natural
+- Give useful motivation resources when needed
 
 USER MEMORY:
 ${memory.messages.slice(-10).join(" | ")}
@@ -122,27 +132,43 @@ ${memory.traits.slice(-3).join(" | ")}
       ]
     });
 
-    let reply = completion.choices[0].message.content;
+    let raw = completion.choices[0].message.content;
 
-    reply = reply ? reply.replace(/\?/g, ".") : "No response";
+    console.log("RAW AI OUTPUT:", raw);
+
+    let parsed;
+
+    try {
+      parsed = JSON.parse(raw);
+    } catch (err) {
+      console.log("⚠️ JSON PARSE FAILED, USING FALLBACK");
+
+      parsed = {
+        reply: raw,
+        videos: [],
+        images: []
+      };
+    }
 
     console.log("✅ AI RESPONSE SUCCESS");
 
-    res.json({ reply });
+    res.json(parsed);
 
   } catch (error) {
     console.log("❌ OPENROUTER ERROR:");
     console.dir(error, { depth: null });
 
     res.status(500).json({
-      reply: "AI request failed"
+      reply: "AI request failed",
+      videos: [],
+      images: []
     });
   }
 });
 
-// ========================
-// START SERVER
-// ========================
+/* ========================
+   START SERVER
+======================== */
 const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
