@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import dotenv from "dotenv";
 import OpenAI from "openai";
 
@@ -6,22 +7,21 @@ dotenv.config();
 
 const app = express();
 
-/* ========================
-   🚨 BULLETPROOF CORS FIX
-   (replaces cors package)
-======================== */
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+// ========================
+// CORS CONFIG (FIXED)
+// ========================
+const corsOptions = {
+  origin: [
+    "https://winners-image-pzdxwv0un-thereapersbibles-projects.vercel.app",
+    "http://localhost:3000"
+  ],
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+};
 
-  // Handle preflight request immediately
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-
-  next();
-});
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 app.use(express.json());
 
@@ -51,7 +51,7 @@ app.get("/", (req, res) => {
 });
 
 // ========================
-// AI ROUTE
+// AI ROUTE (ENHANCED MULTI-MEDIA RESPONSE)
 // ========================
 app.post("/api/ai", async (req, res) => {
   console.log("🔥 HIT /api/ai ROUTE");
@@ -63,6 +63,7 @@ app.post("/api/ai", async (req, res) => {
     return res.status(400).json({ reply: "No message provided" });
   }
 
+  // INIT MEMORY
   if (!userMemory[userId]) {
     userMemory[userId] = {
       messages: [],
@@ -99,11 +100,28 @@ app.post("/api/ai", async (req, res) => {
         {
           role: "system",
           content: `
-You are a smooth, confident life mentor.
+You are a smooth, charismatic life mentor.
 
-Help the user build discipline, confidence, money skills, and focus.
+Return your response in STRICT JSON ONLY:
 
-Be natural, not robotic.
+{
+  "reply": "main response text",
+  "videos": [
+    { "title": "optional", "url": "optional youtube link" }
+  ],
+  "images": [
+    { "title": "optional", "url": "optional image link" }
+  ]
+}
+
+Rules:
+- Be direct
+- No repetition
+- Build identity over time
+- Stay natural
+- Give useful motivation resources when needed
+- Include YouTube links when helpful
+- Include image links when helpful (fitness, mindset, inspiration)
 
 USER MEMORY:
 ${memory.messages.slice(-10).join(" | ")}
@@ -122,20 +140,36 @@ ${memory.traits.slice(-3).join(" | ")}
       ]
     });
 
-    let reply = completion.choices[0].message.content;
+    let raw = completion.choices[0].message.content;
 
-    reply = reply ? reply.replace(/\?/g, ".") : "No response";
+    console.log("RAW AI OUTPUT:", raw);
+
+    let parsed;
+
+    try {
+      parsed = JSON.parse(raw);
+    } catch (err) {
+      console.log("⚠️ JSON PARSE FAILED, FALLING BACK");
+
+      parsed = {
+        reply: raw,
+        videos: [],
+        images: []
+      };
+    }
 
     console.log("✅ AI RESPONSE SUCCESS");
 
-    res.json({ reply });
+    res.json(parsed);
 
   } catch (error) {
     console.log("❌ OPENROUTER ERROR:");
     console.dir(error, { depth: null });
 
     res.status(500).json({
-      reply: "AI request failed"
+      reply: "AI request failed",
+      videos: [],
+      images: []
     });
   }
 });
