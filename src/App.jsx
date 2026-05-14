@@ -110,7 +110,6 @@ export default function App() {
 
     const userText = input;
 
-    // show user message immediately
     setMessages((prev) => [
       ...prev,
       { sender: "user", text: userText }
@@ -136,9 +135,15 @@ export default function App() {
 
       const data = await res.json();
 
+      // ✅ UPDATED: now supports videos + images
       setMessages((prev) => [
         ...prev,
-        { sender: "ai", text: data.reply }
+        {
+          sender: "ai",
+          text: data.reply,
+          videos: data.videos || [],
+          images: data.images || []
+        }
       ]);
 
       posthog.capture("ai_response_received");
@@ -165,7 +170,6 @@ export default function App() {
     return (
       <div style={homeStyle}>
         <StarField />
-
         <div style={darkOverlay} />
 
         <div style={homeContent}>
@@ -249,19 +253,7 @@ export default function App() {
               <button
                 style={btn}
                 onClick={() => {
-                  posthog.capture("onboarding_completed", {
-                    reason: userProfile.reason,
-                    gender: userProfile.gender,
-                    age: userProfile.age
-                  });
-
-                  posthog.identify(
-                    userProfile.reason + "-" + Date.now(),
-                    {
-                      gender: userProfile.gender,
-                      age: userProfile.age
-                    }
-                  );
+                  posthog.capture("onboarding_completed", userProfile);
 
                   setAppState(APP_STATE.CHAT);
                 }}
@@ -310,7 +302,48 @@ export default function App() {
                   color: "white"
                 }}
               >
-                {m.text}
+                {/* TEXT */}
+                <div>{m.text}</div>
+
+                {/* IMAGES */}
+                {m.images?.length > 0 && (
+                  <div style={{ marginTop: 10 }}>
+                    {m.images.map((img, idx) => (
+                      <img
+                        key={idx}
+                        src={img.url}
+                        alt={img.title || "image"}
+                        style={{
+                          width: "100%",
+                          borderRadius: "10px",
+                          marginTop: "8px"
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* VIDEOS */}
+                {m.videos?.length > 0 && (
+                  <div style={{ marginTop: 10 }}>
+                    {m.videos.map((vid, idx) => (
+                      <a
+                        key={idx}
+                        href={vid.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          display: "block",
+                          marginTop: "6px",
+                          color: "#00bcd4",
+                          textDecoration: "underline"
+                        }}
+                      >
+                        🎥 {vid.title || "Watch Video"}
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           ))}
