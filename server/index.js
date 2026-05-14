@@ -1,5 +1,4 @@
 import express from "express";
-import cors from "cors";
 import dotenv from "dotenv";
 import OpenAI from "openai";
 
@@ -7,31 +6,33 @@ dotenv.config();
 
 const app = express();
 
-// ========================
-// CORS CONFIG (PRODUCTION SAFE)
-// ========================
-const corsOptions = {
-  origin: "*",
-  methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-};
+/* ========================
+   🚨 BULLETPROOF CORS FIX
+   (replaces cors package)
+======================== */
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
-// MUST be first middleware
-app.use(cors(corsOptions));
+  // Handle preflight request immediately
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+
+  next();
+});
+
 app.use(express.json());
-
-// Explicit preflight handling (safe for Render)
-app.options("*", cors(corsOptions));
 
 console.log("SERVER STARTING...");
 console.log("API KEY LOADED:", process.env.OPENROUTER_API_KEY ? "YES" : "NO");
 
 // ========================
-// MEMORY STORE (RAM)
+// MEMORY STORE
 // ========================
 const userMemory = {};
 
-// simple user id (basic version)
 function getUserId(req) {
   return req.ip;
 }
@@ -50,7 +51,7 @@ app.get("/", (req, res) => {
 });
 
 // ========================
-// AI ROUTE (WITH MEMORY)
+// AI ROUTE
 // ========================
 app.post("/api/ai", async (req, res) => {
   console.log("🔥 HIT /api/ai ROUTE");
@@ -62,7 +63,6 @@ app.post("/api/ai", async (req, res) => {
     return res.status(400).json({ reply: "No message provided" });
   }
 
-  // INIT MEMORY
   if (!userMemory[userId]) {
     userMemory[userId] = {
       messages: [],
@@ -73,7 +73,6 @@ app.post("/api/ai", async (req, res) => {
 
   const memory = userMemory[userId];
 
-  // STORE MESSAGE
   memory.messages.push(message);
 
   const lowerMsg = message.toLowerCase();
@@ -100,31 +99,11 @@ app.post("/api/ai", async (req, res) => {
         {
           role: "system",
           content: `
-You are not a robotic AI assistant.
+You are a smooth, confident life mentor.
 
-You are a smooth, charismatic, funny life mentor who feels like a real friend.
+Help the user build discipline, confidence, money skills, and focus.
 
-Your energy:
-- confident
-- wise
-- calm
-- emotionally intelligent
-- smooth older-brother vibe
-- funny but not corny
-
-You help users:
-- build discipline
-- improve confidence
-- get in shape
-- make money
-- stop overthinking
-- stay focused
-
-You occasionally use humor inspired by:
-- Bernie Mac
-- Samuel L. Jackson
-
-But never overdo jokes.
+Be natural, not robotic.
 
 USER MEMORY:
 ${memory.messages.slice(-10).join(" | ")}
@@ -134,13 +113,6 @@ ${memory.goals.slice(-3).join(" | ")}
 
 TRAITS:
 ${memory.traits.slice(-3).join(" | ")}
-
-Rules:
-- Be direct
-- No repetition
-- Build identity over time
-- Stay natural
-- Give useful resources when needed
 `
         },
         {
@@ -152,9 +124,7 @@ Rules:
 
     let reply = completion.choices[0].message.content;
 
-    if (reply) {
-      reply = reply.replace(/\?/g, ".");
-    }
+    reply = reply ? reply.replace(/\?/g, ".") : "No response";
 
     console.log("✅ AI RESPONSE SUCCESS");
 

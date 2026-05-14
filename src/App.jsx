@@ -119,7 +119,7 @@ export default function App() {
     setInput("");
 
     try {
-      const res = await fetch("https://ai-backend-fyyw.onrender.com/api/ai", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ai`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
