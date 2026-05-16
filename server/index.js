@@ -8,22 +8,24 @@ dotenv.config();
 const app = express();
 
 /* ========================
-   TRUST PROXY (RENDER)
+   TRUST PROXY
 ======================== */
 app.set("trust proxy", true);
 
 /* ========================
-   CORS
+   FORCE CORS
 ======================== */
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-  );
-  res.header(
+  res.setHeader("Access-Control-Allow-Origin", "*");
+
+  res.setHeader(
     "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS"
+    "GET, POST, OPTIONS"
+  );
+
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
   );
 
   if (req.method === "OPTIONS") {
@@ -60,11 +62,11 @@ function getUserId(req) {
 ======================== */
 const client = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
+  apiKey: process.env.OPENROUTER_API_KEY
 });
 
 /* ========================
-   TEST ROUTE
+   ROOT ROUTE
 ======================== */
 app.get("/", (req, res) => {
   res.json({
@@ -116,12 +118,11 @@ app.post("/api/ai", async (req, res) => {
       memory.traits.push(message);
     }
 
-    console.log("🧠 MEMORY STATE:", memory);
-
-    console.log("CALLING OPENROUTER...");
+    console.log("🧠 MEMORY:", memory);
 
     const completion = await client.chat.completions.create({
       model: "meta-llama/llama-3.1-8b-instruct",
+
       messages: [
         {
           role: "system",
@@ -139,7 +140,6 @@ Return STRICT JSON ONLY:
 Rules:
 - Be direct
 - No repetition
-- Build identity over time
 - Stay natural
 
 USER MEMORY:
@@ -161,7 +161,7 @@ ${memory.traits.slice(-3).join(" | ")}
 
     let raw = completion.choices[0].message.content;
 
-    console.log("RAW AI OUTPUT:", raw);
+    console.log("RAW AI:", raw);
 
     let parsed;
 
@@ -175,15 +175,13 @@ ${memory.traits.slice(-3).join(" | ")}
       };
     }
 
-    console.log("✅ AI RESPONSE SUCCESS");
-
-    res.json(parsed);
+    return res.json(parsed);
 
   } catch (error) {
-    console.error("❌ SERVER ERROR:");
+    console.error("❌ ERROR:");
     console.error(error);
 
-    res.status(500).json({
+    return res.status(500).json({
       reply: "AI request failed",
       videos: [],
       images: []

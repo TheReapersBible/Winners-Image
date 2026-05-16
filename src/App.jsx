@@ -118,14 +118,21 @@ export default function App() {
     setInput("");
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ai`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: userText,
-          profile: userProfile
-        })
-      });
+      const res = await fetch(
+        "https://ai-backend-fyyw.onrender.com/api/ai",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json"
+          },
+
+          body: JSON.stringify({
+            message: userText,
+            profile: userProfile
+          })
+        }
+      );
 
       console.log("STATUS:", res.status);
 
@@ -135,7 +142,6 @@ export default function App() {
 
       const data = await res.json();
 
-      // ✅ UPDATED: now supports videos + images
       setMessages((prev) => [
         ...prev,
         {
@@ -302,10 +308,8 @@ export default function App() {
                   color: "white"
                 }}
               >
-                {/* TEXT */}
                 <div>{m.text}</div>
 
-                {/* IMAGES */}
                 {m.images?.length > 0 && (
                   <div style={{ marginTop: 10 }}>
                     {m.images.map((img, idx) => (
@@ -323,7 +327,6 @@ export default function App() {
                   </div>
                 )}
 
-                {/* VIDEOS */}
                 {m.videos?.length > 0 && (
                   <div style={{ marginTop: 10 }}>
                     {m.videos.map((vid, idx) => (
