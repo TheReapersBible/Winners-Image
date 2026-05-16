@@ -8,21 +8,43 @@ dotenv.config();
 const app = express();
 
 /* ========================
-   🚨 CORS (MUST BE FIRST)
+   TRUST PROXY (RENDER)
 ======================== */
-const corsOptions = {
-  origin: "*",
-  methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-};
+app.set("trust proxy", true);
 
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+/* ========================
+   CORS
+======================== */
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, OPTIONS"
+  );
 
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+
+  next();
+});
+
+app.use(cors());
+
+/* ========================
+   BODY PARSER
+======================== */
 app.use(express.json());
 
 console.log("SERVER STARTING...");
-console.log("API KEY LOADED:", process.env.OPENROUTER_API_KEY ? "YES" : "NO");
+console.log(
+  "API KEY LOADED:",
+  process.env.OPENROUTER_API_KEY ? "YES" : "NO"
+);
 
 /* ========================
    MEMORY STORE
@@ -30,7 +52,7 @@ console.log("API KEY LOADED:", process.env.OPENROUTER_API_KEY ? "YES" : "NO");
 const userMemory = {};
 
 function getUserId(req) {
-  return req.ip;
+  return req.ip || "unknown-user";
 }
 
 /* ========================
@@ -45,7 +67,9 @@ const client = new OpenAI({
    TEST ROUTE
 ======================== */
 app.get("/", (req, res) => {
-  res.send("Backend is running");
+  res.json({
+    status: "Backend running"
+  });
 });
 
 /* ========================
@@ -54,42 +78,46 @@ app.get("/", (req, res) => {
 app.post("/api/ai", async (req, res) => {
   console.log("🔥 HIT /api/ai ROUTE");
 
-  const { message } = req.body;
-  const userId = getUserId(req);
-
-  if (!message) {
-    return res.status(400).json({ reply: "No message provided" });
-  }
-
-  // INIT MEMORY
-  if (!userMemory[userId]) {
-    userMemory[userId] = {
-      messages: [],
-      goals: [],
-      traits: []
-    };
-  }
-
-  const memory = userMemory[userId];
-
-  memory.messages.push(message);
-
-  const lowerMsg = message.toLowerCase();
-
-  if (
-    lowerMsg.includes("goal") ||
-    lowerMsg.includes("want") ||
-    lowerMsg.includes("need") ||
-    lowerMsg.includes("trying to")
-  ) {
-    memory.goals.push(message);
-  } else {
-    memory.traits.push(message);
-  }
-
-  console.log("🧠 MEMORY STATE:", memory);
-
   try {
+    const { message } = req.body;
+
+    if (!message) {
+      return res.status(400).json({
+        reply: "No message provided",
+        videos: [],
+        images: []
+      });
+    }
+
+    const userId = getUserId(req);
+
+    if (!userMemory[userId]) {
+      userMemory[userId] = {
+        messages: [],
+        goals: [],
+        traits: []
+      };
+    }
+
+    const memory = userMemory[userId];
+
+    memory.messages.push(message);
+
+    const lowerMsg = message.toLowerCase();
+
+    if (
+      lowerMsg.includes("goal") ||
+      lowerMsg.includes("want") ||
+      lowerMsg.includes("need") ||
+      lowerMsg.includes("trying to")
+    ) {
+      memory.goals.push(message);
+    } else {
+      memory.traits.push(message);
+    }
+
+    console.log("🧠 MEMORY STATE:", memory);
+
     console.log("CALLING OPENROUTER...");
 
     const completion = await client.chat.completions.create({
@@ -113,7 +141,6 @@ Rules:
 - No repetition
 - Build identity over time
 - Stay natural
-- Give useful motivation resources when needed
 
 USER MEMORY:
 ${memory.messages.slice(-10).join(" | ")}
@@ -140,9 +167,7 @@ ${memory.traits.slice(-3).join(" | ")}
 
     try {
       parsed = JSON.parse(raw);
-    } catch (err) {
-      console.log("⚠️ JSON PARSE FAILED, USING FALLBACK");
-
+    } catch {
       parsed = {
         reply: raw,
         videos: [],
@@ -155,8 +180,8 @@ ${memory.traits.slice(-3).join(" | ")}
     res.json(parsed);
 
   } catch (error) {
-    console.log("❌ OPENROUTER ERROR:");
-    console.dir(error, { depth: null });
+    console.error("❌ SERVER ERROR:");
+    console.error(error);
 
     res.status(500).json({
       reply: "AI request failed",
