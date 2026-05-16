@@ -7,17 +7,13 @@ dotenv.config();
 
 const app = express();
 
-// ========================
-// CORS CONFIG (FIXED)
-// ========================
+/* ========================
+   CORS
+======================== */
 const corsOptions = {
-  origin: [
-    "https://winners-image-pzdxwv0un-thereapersbibles-projects.vercel.app",
-    "http://localhost:3000"
-  ],
+  origin: "*",
   methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true
+  allowedHeaders: ["Content-Type", "Authorization"]
 };
 
 app.use(cors(corsOptions));
@@ -28,31 +24,33 @@ app.use(express.json());
 console.log("SERVER STARTING...");
 console.log("API KEY LOADED:", process.env.OPENROUTER_API_KEY ? "YES" : "NO");
 
-// ========================
-// MEMORY STORE
-// ========================
+/* ========================
+   MEMORY
+======================== */
 const userMemory = {};
 
 function getUserId(req) {
   return req.ip;
 }
 
-// OpenRouter client
+/* ========================
+   OPENROUTER
+======================== */
 const client = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
-// ========================
-// TEST ROUTE
-// ========================
+/* ========================
+   TEST ROUTE
+======================== */
 app.get("/", (req, res) => {
   res.send("Backend is running");
 });
 
-// ========================
-// AI ROUTE (ENHANCED MULTI-MEDIA RESPONSE)
-// ========================
+/* ========================
+   AI ROUTE
+======================== */
 app.post("/api/ai", async (req, res) => {
   console.log("🔥 HIT /api/ai ROUTE");
 
@@ -63,7 +61,6 @@ app.post("/api/ai", async (req, res) => {
     return res.status(400).json({ reply: "No message provided" });
   }
 
-  // INIT MEMORY
   if (!userMemory[userId]) {
     userMemory[userId] = {
       messages: [],
@@ -89,39 +86,25 @@ app.post("/api/ai", async (req, res) => {
     memory.traits.push(message);
   }
 
-  console.log("🧠 MEMORY STATE:", memory);
-
   try {
-    console.log("CALLING OPENROUTER...");
-
     const completion = await client.chat.completions.create({
       model: "meta-llama/llama-3.1-8b-instruct",
       messages: [
         {
           role: "system",
           content: `
-You are a smooth, charismatic life mentor.
-
-Return your response in STRICT JSON ONLY:
+Return STRICT JSON ONLY:
 
 {
   "reply": "main response text",
-  "videos": [
-    { "title": "optional", "url": "optional youtube link" }
-  ],
-  "images": [
-    { "title": "optional", "url": "optional image link" }
-  ]
+  "videos": [],
+  "images": []
 }
 
 Rules:
 - Be direct
 - No repetition
-- Build identity over time
 - Stay natural
-- Give useful motivation resources when needed
-- Include YouTube links when helpful
-- Include image links when helpful (fitness, mindset, inspiration)
 
 USER MEMORY:
 ${memory.messages.slice(-10).join(" | ")}
@@ -142,15 +125,11 @@ ${memory.traits.slice(-3).join(" | ")}
 
     let raw = completion.choices[0].message.content;
 
-    console.log("RAW AI OUTPUT:", raw);
-
     let parsed;
 
     try {
       parsed = JSON.parse(raw);
-    } catch (err) {
-      console.log("⚠️ JSON PARSE FAILED, FALLING BACK");
-
+    } catch {
       parsed = {
         reply: raw,
         videos: [],
@@ -158,15 +137,12 @@ ${memory.traits.slice(-3).join(" | ")}
       };
     }
 
-    console.log("✅ AI RESPONSE SUCCESS");
-
-    res.json(parsed);
+    return res.json(parsed);
 
   } catch (error) {
-    console.log("❌ OPENROUTER ERROR:");
-    console.dir(error, { depth: null });
+    console.log("❌ OPENROUTER ERROR:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       reply: "AI request failed",
       videos: [],
       images: []
@@ -174,9 +150,9 @@ ${memory.traits.slice(-3).join(" | ")}
   }
 });
 
-// ========================
-// START SERVER
-// ========================
+/* ========================
+   START SERVER
+======================== */
 const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
