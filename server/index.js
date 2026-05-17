@@ -8,7 +8,7 @@ dotenv.config();
 const app = express();
 
 /* ========================
-   CORS (FIXED)
+   CORS
 ======================== */
 app.use(cors({
   origin: "*",
@@ -17,7 +17,6 @@ app.use(cors({
   credentials: true
 }));
 
-// IMPORTANT: keep this for preflight requests
 app.options("*", cors());
 
 app.use(express.json());
@@ -43,12 +42,22 @@ const client = new OpenAI({
 });
 
 /* ========================
-   TEST ROUTES
+   BASE ROUTE
 ======================== */
 app.get("/", (req, res) => {
   res.send("Backend is running");
 });
 
+/* ========================
+   DEBUG ROUTE (IMPORTANT)
+======================== */
+app.get("/debug123", (req, res) => {
+  res.json({ alive: true, time: Date.now() });
+});
+
+/* ========================
+   TEST ROUTE
+======================== */
 app.get("/api/test", (req, res) => {
   res.json({ ok: true });
 });
@@ -77,7 +86,6 @@ app.post("/api/ai", async (req, res) => {
           role: "system",
           content: `
 Return STRICT JSON ONLY:
-
 {
   "reply": "main response text",
   "videos": [],
