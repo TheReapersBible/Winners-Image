@@ -460,5 +460,4 @@ function Content({ children }) {
     </div>
   );
 }
-  );
-}
+  
