@@ -8,16 +8,17 @@ dotenv.config();
 const app = express();
 
 /* ========================
-   CORS
+   CORS (FIXED)
 ======================== */
-const corsOptions = {
+app.use(cors({
   origin: "*",
-  methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-};
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}));
 
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+// IMPORTANT: keep this for preflight requests
+app.options("*", cors());
 
 app.use(express.json());
 
@@ -42,7 +43,7 @@ const client = new OpenAI({
 });
 
 /* ========================
-   TEST ROUTE
+   TEST ROUTES
 ======================== */
 app.get("/", (req, res) => {
   res.send("Backend is running");
@@ -63,13 +64,14 @@ app.post("/api/ai", async (req, res) => {
 
     if (!message) {
       return res.status(400).json({
-        reply: "No message provided"
+        reply: "No message provided",
+        videos: [],
+        images: []
       });
     }
 
     const completion = await client.chat.completions.create({
       model: "meta-llama/llama-3.1-8b-instruct",
-
       messages: [
         {
           role: "system",
@@ -90,10 +92,9 @@ Return STRICT JSON ONLY:
       ]
     });
 
-    let raw = completion.choices[0].message.content;
+    const raw = completion.choices[0].message.content;
 
     let parsed;
-
     try {
       parsed = JSON.parse(raw);
     } catch {
@@ -117,6 +118,9 @@ Return STRICT JSON ONLY:
   }
 });
 
+/* ========================
+   START SERVER
+======================== */
 const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
