@@ -8,48 +8,27 @@ dotenv.config();
 const app = express();
 
 /* ========================
-   TRUST PROXY
+   CORS (FIXED - PRODUCTION SAFE)
 ======================== */
-app.set("trust proxy", true);
+app.use(cors({
+  origin: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}));
+
+app.options("*", cors());
 
 /* ========================
-   FORCE CORS
-======================== */
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, OPTIONS"
-  );
-
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization"
-  );
-
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-
-  next();
-});
-
-app.use(cors());
-
-/* ========================
-   BODY PARSER
+   MIDDLEWARE
 ======================== */
 app.use(express.json());
 
 console.log("SERVER STARTING...");
-console.log(
-  "API KEY LOADED:",
-  process.env.OPENROUTER_API_KEY ? "YES" : "NO"
-);
+console.log("API KEY LOADED:", process.env.OPENROUTER_API_KEY ? "YES" : "NO");
 
 /* ========================
-   MEMORY STORE
+   SIMPLE MEMORY (CLEAN)
 ======================== */
 const userMemory = {};
 
@@ -66,11 +45,19 @@ const client = new OpenAI({
 });
 
 /* ========================
-   ROOT ROUTE
+   ROOT
 ======================== */
 app.get("/", (req, res) => {
+  res.json({ status: "Backend running" });
+});
+
+/* ========================
+   DEBUG
+======================== */
+app.get("/debug123", (req, res) => {
   res.json({
-    status: "Backend running"
+    alive: true,
+    time: Date.now()
   });
 });
 
@@ -118,29 +105,18 @@ app.post("/api/ai", async (req, res) => {
       memory.traits.push(message);
     }
 
-    console.log("🧠 MEMORY:", memory);
-
     const completion = await client.chat.completions.create({
       model: "meta-llama/llama-3.1-8b-instruct",
-
       messages: [
         {
           role: "system",
           content: `
-You are a smooth, charismatic life mentor.
-
 Return STRICT JSON ONLY:
-
 {
   "reply": "main response text",
   "videos": [],
   "images": []
 }
-
-Rules:
-- Be direct
-- No repetition
-- Stay natural
 
 USER MEMORY:
 ${memory.messages.slice(-10).join(" | ")}
@@ -159,9 +135,7 @@ ${memory.traits.slice(-3).join(" | ")}
       ]
     });
 
-    let raw = completion.choices[0].message.content;
-
-    console.log("RAW AI:", raw);
+    const raw = completion.choices[0].message.content;
 
     let parsed;
 
@@ -178,8 +152,7 @@ ${memory.traits.slice(-3).join(" | ")}
     return res.json(parsed);
 
   } catch (error) {
-    console.error("❌ ERROR:");
-    console.error(error);
+    console.log("AI ERROR:", error);
 
     return res.status(500).json({
       reply: "AI request failed",
