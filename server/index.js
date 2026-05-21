@@ -10,19 +10,28 @@ const app = express();
 /* ========================
    CORS
 ======================== */
-app.use(cors({
-  origin: "*",
+const corsOptions = {
+  origin: [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://winners-image-1iwiqhbr9-thereapersbibles-projects.vercel.app"
+  ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
-}));
+};
 
-app.options("*", cors());
+app.use(cors(corsOptions));
+
+app.options("*", cors(corsOptions));
 
 app.use(express.json());
 
 console.log("SERVER STARTING...");
-console.log("API KEY LOADED:", process.env.OPENROUTER_API_KEY ? "YES" : "NO");
+console.log(
+  "API KEY LOADED:",
+  process.env.OPENROUTER_API_KEY ? "YES" : "NO"
+);
 
 /* ========================
    MEMORY
@@ -49,17 +58,22 @@ app.get("/", (req, res) => {
 });
 
 /* ========================
-   DEBUG ROUTE (IMPORTANT)
+   DEBUG ROUTE
 ======================== */
 app.get("/debug123", (req, res) => {
-  res.json({ alive: true, time: Date.now() });
+  res.json({
+    alive: true,
+    time: Date.now()
+  });
 });
 
 /* ========================
    TEST ROUTE
 ======================== */
 app.get("/api/test", (req, res) => {
-  res.json({ ok: true });
+  res.json({
+    ok: true
+  });
 });
 
 /* ========================
@@ -103,6 +117,7 @@ Return STRICT JSON ONLY:
     const raw = completion.choices[0].message.content;
 
     let parsed;
+
     try {
       parsed = JSON.parse(raw);
     } catch {
@@ -116,7 +131,7 @@ Return STRICT JSON ONLY:
     return res.json(parsed);
 
   } catch (error) {
-    console.log(error);
+    console.log("AI ERROR:", error);
 
     return res.status(500).json({
       reply: "AI request failed",
