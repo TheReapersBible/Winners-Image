@@ -99,6 +99,45 @@ export default function App() {
     window.speechSynthesis.speak(utterance);
   }
 
+  /* ========================
+     📎 UPLOAD FUNCTION (NEW)
+  ======================== */
+  async function handleFileUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch(
+        "https://ai-backend-fyyw.onrender.com/api/upload",
+        {
+          method: "POST",
+          body: formData
+        }
+      );
+
+      const data = await res.json();
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "user",
+          text: "📎 sent a file",
+          images: file.type.startsWith("image")
+            ? [{ url: data.url }]
+            : [],
+          videos: file.type.startsWith("video")
+            ? [{ url: data.url }]
+            : []
+        }
+      ]);
+    } catch (err) {
+      console.error("UPLOAD ERROR:", err);
+    }
+  }
+
   async function sendMessage() {
     if (!input.trim()) return;
 
@@ -122,11 +161,9 @@ export default function App() {
         "https://ai-backend-fyyw.onrender.com/api/ai",
         {
           method: "POST",
-
           headers: {
             "Content-Type": "application/json"
           },
-
           body: JSON.stringify({
             message: userText,
             profile: userProfile
@@ -260,7 +297,6 @@ export default function App() {
                 style={btn}
                 onClick={() => {
                   posthog.capture("onboarding_completed", userProfile);
-
                   setAppState(APP_STATE.CHAT);
                 }}
               >
@@ -316,7 +352,7 @@ export default function App() {
                       <img
                         key={idx}
                         src={img.url}
-                        alt={img.title || "image"}
+                        alt="image"
                         style={{
                           width: "100%",
                           borderRadius: "10px",
@@ -342,7 +378,7 @@ export default function App() {
                           textDecoration: "underline"
                         }}
                       >
-                        🎥 {vid.title || "Watch Video"}
+                        🎥 Watch Video
                       </a>
                     ))}
                   </div>
@@ -351,6 +387,14 @@ export default function App() {
             </div>
           ))}
         </div>
+
+        {/* NEW FILE UPLOAD INPUT */}
+        <input
+          type="file"
+          accept="image/*,video/*"
+          onChange={handleFileUpload}
+          style={{ marginBottom: "10px", color: "white" }}
+        />
 
         <div style={{ display: "flex" }}>
           <input
@@ -460,4 +504,3 @@ function Content({ children }) {
     </div>
   );
 }
-  
