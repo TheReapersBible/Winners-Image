@@ -17,15 +17,13 @@ function StarField() {
   }
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        overflow: "hidden",
-        zIndex: 0,
-        pointerEvents: "none"
-      }}
-    >
+    <div style={{
+      position: "fixed",
+      inset: 0,
+      overflow: "hidden",
+      zIndex: 0,
+      pointerEvents: "none"
+    }}>
       {starsRef.current.map((s, i) => (
         <div
           key={i}
@@ -69,13 +67,17 @@ export default function App() {
 
   const chatRef = useRef(null);
 
+  /* ========================
+     INIT
+  ======================== */
   useEffect(() => {
     posthog.capture("app_opened");
 
     setMessages([
       {
         sender: "ai",
-        text: "Aye... I see potential in you already. Talk to me."
+        text: "Aye... I see potential in you already. Talk to me.",
+        media: { images: [], videos: [] }
       }
     ]);
   }, []);
@@ -100,58 +102,20 @@ export default function App() {
   }
 
   /* ========================
-     📎 UPLOAD FUNCTION (NEW)
+     SEND MESSAGE
   ======================== */
-  async function handleFileUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const res = await fetch(
-        "https://ai-backend-fyyw.onrender.com/api/upload",
-        {
-          method: "POST",
-          body: formData
-        }
-      );
-
-      const data = await res.json();
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          sender: "user",
-          text: "📎 sent a file",
-          images: file.type.startsWith("image")
-            ? [{ url: data.url }]
-            : [],
-          videos: file.type.startsWith("video")
-            ? [{ url: data.url }]
-            : []
-        }
-      ]);
-    } catch (err) {
-      console.error("UPLOAD ERROR:", err);
-    }
-  }
-
   async function sendMessage() {
     if (!input.trim()) return;
-
-    console.log("SEND MESSAGE CLICKED");
-
-    posthog.capture("chat_message_sent", {
-      length: input.length
-    });
 
     const userText = input;
 
     setMessages((prev) => [
       ...prev,
-      { sender: "user", text: userText }
+      {
+        sender: "user",
+        text: userText,
+        media: { images: [], videos: [] }
+      }
     ]);
 
     setInput("");
@@ -161,9 +125,7 @@ export default function App() {
         "https://ai-backend-fyyw.onrender.com/api/ai",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             message: userText,
             profile: userProfile
@@ -171,11 +133,7 @@ export default function App() {
         }
       );
 
-      console.log("STATUS:", res.status);
-
-      if (!res.ok) {
-        throw new Error("Server error: " + res.status);
-      }
+      if (!res.ok) throw new Error("Server error: " + res.status);
 
       const data = await res.json();
 
@@ -184,30 +142,31 @@ export default function App() {
         {
           sender: "ai",
           text: data.reply,
-          videos: data.videos || [],
-          images: data.images || []
+          media: {
+            images: data.images || [],
+            videos: data.videos || []
+          }
         }
       ]);
-
-      posthog.capture("ai_response_received");
 
       setTimeout(() => speak(data.reply), 200);
 
     } catch (err) {
-      console.error("FETCH ERROR:", err);
+      console.error(err);
 
       setMessages((prev) => [
         ...prev,
         {
           sender: "ai",
-          text: "Something went wrong. Try again."
+          text: "Something went wrong. Try again.",
+          media: { images: [], videos: [] }
         }
       ]);
     }
   }
 
   /* ========================
-     🏠 HOME
+     HOME
   ======================== */
   if (appState === APP_STATE.HOME) {
     return (
@@ -228,33 +187,34 @@ export default function App() {
   }
 
   /* ========================
-     🚀 ONBOARDING
+     ONBOARDING
   ======================== */
   if (appState === APP_STATE.ONBOARDING) {
     return (
       <div style={{ height: "100vh", width: "100%" }}>
+
         {step === 0 && (
-          <div style={slide("https://images.unsplash.com/photo-1446776811953-b23d57bd21aa")}>
+          <div style={slide()}>
             <Overlay />
             <Content>
               <h1>Welcome to Your Evolution</h1>
-              <button style={btn} onClick={() => setStep(1)}>Begin →</button>
+              <button style={btn} onClick={() => setStep(1)}>Begin</button>
             </Content>
           </div>
         )}
 
         {step === 1 && (
-          <div style={slide("https://images.unsplash.com/photo-1516321318423-f06f85e504b3")}>
+          <div style={slide()}>
             <Overlay />
             <Content>
               <h1>Turn Notifications On</h1>
-              <button style={btn} onClick={() => setStep(2)}>Continue →</button>
+              <button style={btn} onClick={() => setStep(2)}>Continue</button>
             </Content>
           </div>
         )}
 
         {step === 2 && (
-          <div style={slide("https://images.unsplash.com/photo-1490730141103-6cac27aaab94")}>
+          <div style={slide()}>
             <Overlay />
             <Content>
               <h2>Why did you download this app?</h2>
@@ -276,7 +236,6 @@ export default function App() {
                 <option>Gender</option>
                 <option>Male</option>
                 <option>Female</option>
-                <option>Non-binary</option>
               </select>
 
               <select
@@ -286,42 +245,38 @@ export default function App() {
                 }
               >
                 <option>Age</option>
-                <option>13-17</option>
                 <option>18-24</option>
                 <option>25-34</option>
-                <option>35-44</option>
-                <option>45+</option>
               </select>
 
               <button
                 style={btn}
-                onClick={() => {
-                  posthog.capture("onboarding_completed", userProfile);
-                  setAppState(APP_STATE.CHAT);
-                }}
+                onClick={() => setAppState(APP_STATE.CHAT)}
               >
                 Enter App 🚀
               </button>
             </Content>
           </div>
         )}
+
       </div>
     );
   }
 
   /* ========================
-     💬 CHAT
+     CHAT UI
   ======================== */
   return (
     <div style={chatPage}>
       <StarField />
       <div style={darkOverlay} />
 
-      <h1 style={{ position: "relative", zIndex: 2, textAlign: "center" }}>
+      <h1 style={{ textAlign: "center", position: "relative", zIndex: 2 }}>
         Winner’s Image Universe
       </h1>
 
-      <div style={{ position: "relative", zIndex: 2, width: 600, margin: "0 auto" }}>
+      <div style={{ width: 600, margin: "0 auto", position: "relative", zIndex: 2 }}>
+
         <div style={chatBox} ref={chatRef}>
           {messages.map((m, i) => (
             <div
@@ -329,72 +284,65 @@ export default function App() {
               style={{
                 display: "flex",
                 justifyContent: m.sender === "user" ? "flex-end" : "flex-start",
-                marginBottom: "10px"
+                marginBottom: 10
               }}
             >
               <div
                 style={{
-                  background:
-                    m.sender === "user"
-                      ? "linear-gradient(45deg,#ff8c00,#ff2e63)"
-                      : "rgba(255,255,255,0.15)",
+                  background: m.sender === "user"
+                    ? "linear-gradient(45deg,#ff8c00,#ff2e63)"
+                    : "rgba(255,255,255,0.15)",
                   padding: "12px 16px",
-                  borderRadius: "18px",
+                  borderRadius: 18,
                   maxWidth: "70%",
                   color: "white"
                 }}
               >
                 <div>{m.text}</div>
 
-                {m.images?.length > 0 && (
+                {/* IMAGES */}
+                {m.media?.images?.length > 0 && (
                   <div style={{ marginTop: 10 }}>
-                    {m.images.map((img, idx) => (
+                    {m.media.images.map((img, idx) => (
                       <img
                         key={idx}
                         src={img.url}
-                        alt="image"
+                        alt=""
+                        onClick={() => window.open(img.url, "_blank")}
                         style={{
                           width: "100%",
-                          borderRadius: "10px",
-                          marginTop: "8px"
+                          borderRadius: 12,
+                          marginTop: 8,
+                          cursor: "pointer"
                         }}
                       />
                     ))}
                   </div>
                 )}
 
-                {m.videos?.length > 0 && (
+                {/* VIDEOS */}
+                {m.media?.videos?.length > 0 && (
                   <div style={{ marginTop: 10 }}>
-                    {m.videos.map((vid, idx) => (
-                      <a
+                    {m.media.videos.map((vid, idx) => (
+                      <video
                         key={idx}
-                        href={vid.url}
-                        target="_blank"
-                        rel="noreferrer"
+                        controls
                         style={{
-                          display: "block",
-                          marginTop: "6px",
-                          color: "#00bcd4",
-                          textDecoration: "underline"
+                          width: "100%",
+                          borderRadius: 12,
+                          marginTop: 8
                         }}
                       >
-                        🎥 Watch Video
-                      </a>
+                        <source src={vid.url} />
+                      </video>
                     ))}
                   </div>
                 )}
+
               </div>
             </div>
           ))}
         </div>
-
-        {/* NEW FILE UPLOAD INPUT */}
-        <input
-          type="file"
-          accept="image/*,video/*"
-          onChange={handleFileUpload}
-          style={{ marginBottom: "10px", color: "white" }}
-        />
 
         <div style={{ display: "flex" }}>
           <input
@@ -406,7 +354,7 @@ export default function App() {
           />
 
           <button style={btn} onClick={sendMessage}>
-            Launch
+            Send
           </button>
         </div>
       </div>
@@ -415,11 +363,11 @@ export default function App() {
 }
 
 /* ========================
-   🎨 STYLES
+   STYLES
 ======================== */
 const btn = {
   padding: "12px 20px",
-  borderRadius: "10px",
+  borderRadius: 10,
   border: "none",
   background: "linear-gradient(45deg,#ff8c00,#ff2e63)",
   color: "white",
@@ -430,23 +378,23 @@ const inputStyle = {
   display: "block",
   margin: "10px auto",
   padding: "10px",
-  width: "300px"
+  width: 300
 };
 
 const inputBar = {
   flex: 1,
-  padding: "12px",
-  borderRadius: "10px",
+  padding: 12,
+  borderRadius: 10,
   border: "none"
 };
 
 const chatBox = {
-  height: "400px",
+  height: 400,
   overflowY: "auto",
-  padding: "15px",
-  marginBottom: "20px",
+  padding: 15,
+  marginBottom: 20,
   background: "rgba(0,0,0,0.4)",
-  borderRadius: "20px"
+  borderRadius: 20
 };
 
 const darkOverlay = {
@@ -462,8 +410,7 @@ const homeStyle = {
   justifyContent: "center",
   alignItems: "center",
   color: "white",
-  background:
-    "url('https://images.unsplash.com/photo-1462331940025-496dfbfc7564') center/cover"
+  background: "url('https://images.unsplash.com/photo-1462331940025-496dfbfc7564') center/cover"
 };
 
 const homeContent = {
@@ -474,16 +421,14 @@ const homeContent = {
 
 const chatPage = {
   minHeight: "100vh",
-  background:
-    "url('https://images.unsplash.com/photo-1446776811953-b23d57bd21aa') center/cover",
+  background: "url('https://images.unsplash.com/photo-1446776811953-b23d57bd21aa') center/cover",
   color: "white",
-  padding: "40px"
+  padding: 40
 };
 
-const slide = (img) => ({
+const slide = () => ({
   height: "100vh",
   width: "100%",
-  backgroundImage: `url('${img}')`,
   backgroundSize: "cover",
   backgroundPosition: "center",
   position: "relative",
