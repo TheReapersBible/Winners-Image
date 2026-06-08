@@ -55,6 +55,7 @@ export default function App() {
   const fileInputRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const voicesRef = useRef([]);
 
   /* ========================
      INIT
@@ -69,6 +70,14 @@ export default function App() {
         media: []
       }
     ]);
+
+    // Load voices as soon as they are available
+    function loadVoices() {
+      voicesRef.current = window.speechSynthesis.getVoices();
+    }
+
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
   }, []);
 
   useEffect(() => {
@@ -79,33 +88,37 @@ export default function App() {
   }, [messages]);
 
   /* ========================
-     ELEVENLABS VOICE
+     VOICE
   ======================== */
-  async function speak(text) {
-    try {
-      const res = await fetch("https://ai-backend-fyyw.onrender.com/api/speak", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text })
-      });
+  function speak(text) {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
 
-      if (!res.ok) throw new Error("Voice failed");
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voices = voicesRef.current;
 
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audio.play();
+    // Pick the best sounding voice available on the device
+    const preferred = voices.find(v =>
+      v.name.includes("Google UK English Male")
+    ) || voices.find(v =>
+      v.name.includes("Daniel")
+    ) || voices.find(v =>
+      v.name.includes("Aaron")
+    ) || voices.find(v =>
+      v.name.includes("Google US English")
+    ) || voices.find(v =>
+      v.lang === "en-US" && !v.name.includes("Female") && !v.name.includes("female")
+    ) || voices.find(v =>
+      v.lang === "en-US"
+    ) || voices[0];
 
-    } catch (err) {
-      console.log("Voice error:", err);
-      // Fallback to browser voice if ElevenLabs fails
-      if (!window.speechSynthesis) return;
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.85;
-      utterance.pitch = 0.65;
-      window.speechSynthesis.speak(utterance);
-    }
+    if (preferred) utterance.voice = preferred;
+
+    utterance.rate = 0.88;
+    utterance.pitch = 0.75;
+    utterance.volume = 1;
+
+    window.speechSynthesis.speak(utterance);
   }
 
   /* ========================
@@ -256,8 +269,11 @@ export default function App() {
                 <div style={{ width: "70%", display: "flex", flexDirection: "column", gap: 8 }}>
                   {m.media.map((med, idx) => {
                     if (med.type === "image") return (
-                      <div key={idx} style={{ borderRadius: 16, overflow: "hidden", cursor: "pointer" }}
-                        onClick={() => window.open(med.url, "_blank")}>
+                      <div
+                        key={idx}
+                        style={{ borderRadius: 16, overflow: "hidden", cursor: "pointer" }}
+                        onClick={() => window.open(med.url, "_blank")}
+                      >
                         <img
                           src={med.url}
                           alt=""
