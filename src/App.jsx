@@ -50,6 +50,7 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isRecording, setIsRecording] = useState(false);
+  const [alterEgoActive, setAlterEgoActive] = useState(false);
 
   const chatRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -67,11 +68,11 @@ export default function App() {
       {
         sender: "ai",
         text: "Aye... I see potential in you already. Talk to me.",
-        media: []
+        media: [],
+        winScore: null
       }
     ]);
 
-    // Load voices as soon as they are available
     function loadVoices() {
       voicesRef.current = window.speechSynthesis.getVoices();
     }
@@ -97,20 +98,14 @@ export default function App() {
     const utterance = new SpeechSynthesisUtterance(text);
     const voices = voicesRef.current;
 
-    // Pick the best sounding voice available on the device
-    const preferred = voices.find(v =>
-      v.name.includes("Google UK English Male")
-    ) || voices.find(v =>
-      v.name.includes("Daniel")
-    ) || voices.find(v =>
-      v.name.includes("Aaron")
-    ) || voices.find(v =>
-      v.name.includes("Google US English")
-    ) || voices.find(v =>
-      v.lang === "en-US" && !v.name.includes("Female") && !v.name.includes("female")
-    ) || voices.find(v =>
-      v.lang === "en-US"
-    ) || voices[0];
+    const preferred =
+      voices.find(v => v.name.includes("Google UK English Male")) ||
+      voices.find(v => v.name.includes("Daniel")) ||
+      voices.find(v => v.name.includes("Aaron")) ||
+      voices.find(v => v.name.includes("Google US English")) ||
+      voices.find(v => v.lang === "en-US" && !v.name.toLowerCase().includes("female")) ||
+      voices.find(v => v.lang === "en-US") ||
+      voices[0];
 
     if (preferred) utterance.voice = preferred;
 
@@ -136,7 +131,8 @@ export default function App() {
       setMessages(prev => [...prev, {
         sender: "user",
         text: null,
-        media: [{ type: "audio", url }]
+        media: [{ type: "audio", url }],
+        winScore: null
       }]);
       stream.getTracks().forEach(t => t.stop());
       sendMessageWithText("I just sent a voice message — please respond with motivation and guidance.");
@@ -161,7 +157,8 @@ export default function App() {
     setMessages(prev => [...prev, {
       sender: "user",
       text: null,
-      media: [{ type, url }]
+      media: [{ type, url }],
+      winScore: null
     }]);
     sendMessageWithText(`I just shared a ${type}. Please respond with relevant motivational insight.`);
   }
@@ -179,7 +176,7 @@ export default function App() {
   async function sendMessageWithText(text) {
     setMessages(prev => [
       ...prev,
-      { sender: "user", text, media: [] }
+      { sender: "user", text, media: [], winScore: null }
     ]);
 
     try {
@@ -196,11 +193,15 @@ export default function App() {
 
       const data = await res.json();
 
+      if (data.alterEgoActive) setAlterEgoActive(true);
+
       setMessages(prev => [
         ...prev,
         {
           sender: "ai",
           text: data.reply,
+          winScore: data.winScore || null,
+          mirrorTalk: data.mirrorTalk || false,
           media: [
             ...(data.images || []).map(i => ({ type: "image", url: i.url })),
             ...(data.videos || []).map(v => ({ type: "video", url: v.url }))
@@ -217,10 +218,20 @@ export default function App() {
         {
           sender: "ai",
           text: "Something went wrong. Try again.",
-          media: []
+          media: [],
+          winScore: null
         }
       ]);
     }
+  }
+
+  /* ========================
+     WIN SCORE COLOR
+  ======================== */
+  function winScoreColor(score) {
+    if (score >= 7) return "linear-gradient(45deg,#00c853,#00897b)";
+    if (score >= 4) return "linear-gradient(45deg,#ff8c00,#ff6d00)";
+    return "linear-gradient(45deg,#ff2e63,#c62828)";
   }
 
   /* ========================
@@ -231,12 +242,36 @@ export default function App() {
       <StarField />
       <div style={darkOverlay} />
 
-      <h1 style={{ textAlign: "center", position: "relative", zIndex: 2 }}>
-        Winner's Image Nation
-      </h1>
+      {/* HEADER */}
+      <div style={{
+        position: "relative",
+        zIndex: 2,
+        textAlign: "center",
+        paddingBottom: 10
+      }}>
+        <h1 style={{ margin: 0, fontSize: 26, letterSpacing: 2 }}>
+          Winner's Image Nation
+        </h1>
+        {alterEgoActive && (
+          <div style={{
+            display: "inline-block",
+            marginTop: 6,
+            padding: "4px 14px",
+            borderRadius: 20,
+            background: "linear-gradient(45deg,#ff8c00,#ff2e63)",
+            fontSize: 12,
+            fontWeight: 700,
+            letterSpacing: 1,
+            color: "white"
+          }}>
+            ⚡ ALTER EGO ACTIVE
+          </div>
+        )}
+      </div>
 
       <div style={{ width: 600, margin: "0 auto", position: "relative", zIndex: 2 }}>
 
+        {/* CHAT BOX */}
         <div style={chatBox} ref={chatRef}>
           {messages.map((m, i) => (
             <div
@@ -249,24 +284,66 @@ export default function App() {
               }}
             >
               {m.text && (
-                <div
-                  style={{
+                <div style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: m.sender === "user" ? "flex-end" : "flex-start",
+                  maxWidth: "70%"
+                }}>
+                  {/* Mirror Talk indicator */}
+                  {m.mirrorTalk && (
+                    <div style={{
+                      fontSize: 11,
+                      color: "rgba(255,200,60,0.9)",
+                      letterSpacing: 1,
+                      marginBottom: 4,
+                      fontWeight: 700
+                    }}>
+                      🪞 MIRROR TALK
+                    </div>
+                  )}
+
+                  {/* Message bubble */}
+                  <div style={{
                     background: m.sender === "user"
                       ? "linear-gradient(45deg,#ff8c00,#ff2e63)"
                       : "rgba(255,255,255,0.15)",
                     padding: "12px 16px",
                     borderRadius: 18,
-                    maxWidth: "70%",
                     color: "white",
-                    marginBottom: m.media?.length > 0 ? 8 : 0
-                  }}
-                >
-                  {m.text}
+                    marginBottom: m.media?.length > 0 ? 8 : 0,
+                    lineHeight: 1.5
+                  }}>
+                    {m.text}
+                  </div>
+
+                  {/* WIN Score badge */}
+                  {m.sender === "ai" && m.winScore && (
+                    <div style={{
+                      marginTop: 6,
+                      padding: "4px 12px",
+                      borderRadius: 20,
+                      background: winScoreColor(m.winScore),
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: "white",
+                      letterSpacing: 1
+                    }}>
+                      🏆 WIN Score: {m.winScore}/10
+                    </div>
+                  )}
                 </div>
               )}
 
+              {/* MEDIA */}
               {m.media?.length > 0 && (
-                <div style={{ width: "70%", display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{
+                  width: "70%",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                  marginTop: m.text ? 0 : 0
+                }}>
                   {m.media.map((med, idx) => {
                     if (med.type === "image") return (
                       <div
@@ -320,6 +397,37 @@ export default function App() {
           ))}
         </div>
 
+        {/* QUICK COMMANDS */}
+        <div style={{
+          display: "flex",
+          gap: 8,
+          marginBottom: 10,
+          flexWrap: "wrap"
+        }}>
+          {[
+            "create my alter ego",
+            "be real with me",
+            "what's my WIN score"
+          ].map((cmd, i) => (
+            <button
+              key={i}
+              onClick={() => sendMessageWithText(cmd)}
+              style={{
+                padding: "6px 14px",
+                borderRadius: 20,
+                border: "1px solid rgba(255,255,255,0.25)",
+                background: "rgba(255,255,255,0.08)",
+                color: "white",
+                fontSize: 12,
+                cursor: "pointer",
+                letterSpacing: 0.5
+              }}
+            >
+              {cmd}
+            </button>
+          ))}
+        </div>
+
         {/* INPUT BAR */}
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
 
@@ -370,7 +478,12 @@ export default function App() {
         </div>
 
         {isRecording && (
-          <p style={{ color: "rgba(255,100,100,0.9)", fontSize: 13, textAlign: "center", marginTop: 8 }}>
+          <p style={{
+            color: "rgba(255,100,100,0.9)",
+            fontSize: 13,
+            textAlign: "center",
+            marginTop: 8
+          }}>
             Recording... release to send
           </p>
         )}
@@ -400,10 +513,10 @@ const inputBar = {
 };
 
 const chatBox = {
-  height: "calc(100vh - 220px)",
+  height: "calc(100vh - 260px)",
   overflowY: "auto",
   padding: 15,
-  marginBottom: 20,
+  marginBottom: 12,
   background: "rgba(0,0,0,0.4)",
   borderRadius: 20
 };
