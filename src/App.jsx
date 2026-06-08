@@ -47,21 +47,6 @@ function StarField() {
    🚀 APP
 ======================== */
 export default function App() {
-  const APP_STATE = {
-    HOME: "home",
-    ONBOARDING: "onboarding",
-    CHAT: "chat"
-  };
-
-  const [appState, setAppState] = useState(APP_STATE.HOME);
-  const [step, setStep] = useState(0);
-
-  const [userProfile, setUserProfile] = useState({
-    reason: "",
-    gender: "",
-    age: ""
-  });
-
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isRecording, setIsRecording] = useState(false);
@@ -93,36 +78,34 @@ export default function App() {
     });
   }, [messages]);
 
-  function speak(text) {
-    if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.85;
-    utterance.pitch = 0.65;
-    window.speechSynthesis.speak(utterance);
-  }
-
   /* ========================
-     NOTIFICATIONS
+     ELEVENLABS VOICE
   ======================== */
-  function handleNotifYes() {
-    if ("Notification" in window) {
-      Notification.requestPermission().then(perm => {
-        if (perm === "granted") {
-          new Notification("Winners Image Nation", {
-            body: "You're locked in. We'll check on your mental game regularly. 🔥"
-          });
-          setTimeout(() => {
-            if (Notification.permission === "granted") {
-              new Notification("Winners Image Nation", {
-                body: "Hey — how's your mental state right now? Come talk to me. 💪"
-              });
-            }
-          }, 30 * 60 * 1000);
-        }
+  async function speak(text) {
+    try {
+      const res = await fetch("https://ai-backend-fyyw.onrender.com/api/speak", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
       });
+
+      if (!res.ok) throw new Error("Voice failed");
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.play();
+
+    } catch (err) {
+      console.log("Voice error:", err);
+      // Fallback to browser voice if ElevenLabs fails
+      if (!window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.85;
+      utterance.pitch = 0.65;
+      window.speechSynthesis.speak(utterance);
     }
-    setStep(2);
   }
 
   /* ========================
@@ -192,10 +175,7 @@ export default function App() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: text,
-            profile: userProfile
-          })
+          body: JSON.stringify({ message: text })
         }
       );
 
@@ -231,184 +211,6 @@ export default function App() {
   }
 
   /* ========================
-     HOME
-  ======================== */
-  if (appState === APP_STATE.HOME) {
-    return (
-      <div style={{
-        ...homeStyle,
-        background: "url('https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=1600') center/cover no-repeat"
-      }}>
-        <StarField />
-        <div style={darkOverlay} />
-
-        <div style={homeContent}>
-          {/* WIN badge */}
-          <div style={{
-            display: "inline-block",
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: 6,
-            textTransform: "uppercase",
-            color: "rgba(255,200,60,0.9)",
-            border: "1px solid rgba(255,200,60,0.4)",
-            padding: "6px 18px",
-            borderRadius: 30,
-            marginBottom: 18,
-            backdropFilter: "blur(4px)",
-            background: "rgba(255,200,60,0.08)"
-          }}>
-            W·I·N
-          </div>
-
-          <h1 style={{
-            fontSize: "clamp(38px, 9vw, 82px)",
-            fontWeight: 900,
-            lineHeight: 1,
-            letterSpacing: 2,
-            margin: "0 0 10px",
-            textTransform: "uppercase",
-            background: "linear-gradient(135deg, #ffffff 0%, rgba(255,200,60,0.9) 60%, #ff8c00 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent"
-          }}>
-            Winners<br />Image<br />Nation
-          </h1>
-
-          <p style={{
-            fontSize: 15,
-            color: "rgba(255,255,255,0.65)",
-            letterSpacing: 3,
-            textTransform: "uppercase",
-            margin: "18px 0 36px"
-          }}>
-            Mindset · Identity · Execution
-          </p>
-
-          <button style={btn} onClick={() => setAppState(APP_STATE.ONBOARDING)}>
-            Enter App
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  /* ========================
-     ONBOARDING
-  ======================== */
-  if (appState === APP_STATE.ONBOARDING) {
-    return (
-      <div style={{ height: "100vh", width: "100%" }}>
-
-        {/* STEP 0 — Welcome */}
-        {step === 0 && (
-          <div style={{
-            ...slide(),
-            background: "url('https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1600') center/cover no-repeat"
-          }}>
-            <Overlay />
-            <Content>
-              <h1 style={{ fontSize: "clamp(28px, 6vw, 52px)", fontWeight: 900, marginBottom: 14 }}>
-                Welcome to Your Evolution
-              </h1>
-              <p style={{ color: "rgba(255,255,255,0.7)", maxWidth: 340, margin: "0 auto 32px", lineHeight: 1.7 }}>
-                This is where ordinary ends and champions are built. Are you ready?
-              </p>
-              <button style={btn} onClick={() => setStep(1)}>Begin</button>
-            </Content>
-          </div>
-        )}
-
-        {/* STEP 1 — Notifications */}
-        {step === 1 && (
-          <div style={{
-            ...slide(),
-            background: "url('https://images.unsplash.com/photo-1563986768609-322da13575f3?w=1600') center/cover no-repeat"
-          }}>
-            <Overlay />
-            <Content>
-              <div style={{ fontSize: 64, marginBottom: 12 }}>🔔</div>
-              <h1 style={{ fontSize: "clamp(24px, 5vw, 46px)", fontWeight: 900, marginBottom: 14 }}>
-                Turn Notifications On
-              </h1>
-              <p style={{ color: "rgba(255,255,255,0.7)", maxWidth: 340, margin: "0 auto 32px", lineHeight: 1.7 }}>
-                We'll check in on your mental health, remind you to stay focused, and keep you accountable — even when life gets loud. We'll never spam you. Only what matters.
-              </p>
-              <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
-                <button style={btn} onClick={handleNotifYes}>Yes, notify me</button>
-                <button style={btnOutline} onClick={() => setStep(2)}>Not now</button>
-              </div>
-            </Content>
-          </div>
-        )}
-
-        {/* STEP 2 — Profile */}
-        {step === 2 && (
-          <div style={{
-            ...slide(),
-            background: "url('https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1600') center/cover no-repeat",
-            alignItems: "center"
-          }}>
-            <Overlay />
-            <Content>
-              <h2 style={{ fontSize: "clamp(22px, 5vw, 40px)", fontWeight: 900, marginBottom: 8 }}>
-                Why did you download this app?
-              </h2>
-              <p style={{ color: "rgba(255,255,255,0.6)", maxWidth: 320, margin: "0 auto 24px", fontSize: 14, lineHeight: 1.6 }}>
-                Your answer helps us personalise your journey and give you what you actually need.
-              </p>
-
-              <textarea
-                style={inputStyle}
-                value={userProfile.reason}
-                placeholder="Be honest — what brought you here?"
-                onChange={(e) =>
-                  setUserProfile({ ...userProfile, reason: e.target.value })
-                }
-              />
-
-              <select
-                style={inputStyle}
-                onChange={(e) =>
-                  setUserProfile({ ...userProfile, gender: e.target.value })
-                }
-              >
-                <option>Gender</option>
-                <option>Male</option>
-                <option>Female</option>
-              </select>
-
-              <select
-                style={inputStyle}
-                onChange={(e) =>
-                  setUserProfile({ ...userProfile, age: e.target.value })
-                }
-              >
-                <option>Age</option>
-                <option>Under 18</option>
-                <option>18–24</option>
-                <option>25–34</option>
-                <option>35–44</option>
-                <option>45–54</option>
-                <option>55–64</option>
-                <option>65+</option>
-              </select>
-
-              <button
-                style={btn}
-                onClick={() => setAppState(APP_STATE.CHAT)}
-              >
-                Enter App 🚀
-              </button>
-            </Content>
-          </div>
-        )}
-
-      </div>
-    );
-  }
-
-  /* ========================
      CHAT UI
   ======================== */
   return (
@@ -428,59 +230,76 @@ export default function App() {
               key={i}
               style={{
                 display: "flex",
-                justifyContent: m.sender === "user" ? "flex-end" : "flex-start",
-                marginBottom: 10
+                flexDirection: "column",
+                alignItems: m.sender === "user" ? "flex-end" : "flex-start",
+                marginBottom: 16
               }}
             >
-              <div
-                style={{
-                  background: m.sender === "user"
-                    ? "linear-gradient(45deg,#ff8c00,#ff2e63)"
-                    : "rgba(255,255,255,0.15)",
-                  padding: "12px 16px",
-                  borderRadius: 18,
-                  maxWidth: "70%",
-                  color: "white"
-                }}
-              >
-                {m.text && <div>{m.text}</div>}
+              {m.text && (
+                <div
+                  style={{
+                    background: m.sender === "user"
+                      ? "linear-gradient(45deg,#ff8c00,#ff2e63)"
+                      : "rgba(255,255,255,0.15)",
+                    padding: "12px 16px",
+                    borderRadius: 18,
+                    maxWidth: "70%",
+                    color: "white",
+                    marginBottom: m.media?.length > 0 ? 8 : 0
+                  }}
+                >
+                  {m.text}
+                </div>
+              )}
 
-                {/* MEDIA */}
-                {m.media?.length > 0 && (
-                  <div style={{ marginTop: m.text ? 10 : 0 }}>
-                    {m.media.map((med, idx) => {
-                      if (med.type === "image") return (
+              {m.media?.length > 0 && (
+                <div style={{ width: "70%", display: "flex", flexDirection: "column", gap: 8 }}>
+                  {m.media.map((med, idx) => {
+                    if (med.type === "image") return (
+                      <div key={idx} style={{ borderRadius: 16, overflow: "hidden", cursor: "pointer" }}
+                        onClick={() => window.open(med.url, "_blank")}>
                         <img
-                          key={idx}
                           src={med.url}
                           alt=""
-                          onClick={() => window.open(med.url, "_blank")}
-                          style={{ width: "100%", borderRadius: 12, marginTop: 8, cursor: "pointer", display: "block" }}
+                          style={{
+                            width: "100%",
+                            display: "block",
+                            borderRadius: 16,
+                            border: "1px solid rgba(255,255,255,0.15)"
+                          }}
+                          onError={e => e.target.style.display = "none"}
                         />
-                      );
-                      if (med.type === "video") return (
+                      </div>
+                    );
+                    if (med.type === "video") return (
+                      <div key={idx} style={{ borderRadius: 12, overflow: "hidden", background: "#000" }}>
                         <video
-                          key={idx}
                           controls
-                          style={{ width: "100%", borderRadius: 12, marginTop: 8, display: "block" }}
+                          playsInline
+                          style={{
+                            width: "100%",
+                            display: "block",
+                            borderRadius: 12,
+                            maxHeight: 300
+                          }}
+                          onError={e => e.target.style.display = "none"}
                         >
-                          <source src={med.url} />
+                          <source src={med.url} type="video/mp4" />
                         </video>
-                      );
-                      if (med.type === "audio") return (
-                        <audio
-                          key={idx}
-                          controls
-                          src={med.url}
-                          style={{ width: "100%", marginTop: 8 }}
-                        />
-                      );
-                      return null;
-                    })}
-                  </div>
-                )}
-
-              </div>
+                      </div>
+                    );
+                    if (med.type === "audio") return (
+                      <audio
+                        key={idx}
+                        controls
+                        src={med.url}
+                        style={{ width: "100%", marginTop: 4 }}
+                      />
+                    );
+                    return null;
+                  })}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -488,7 +307,6 @@ export default function App() {
         {/* INPUT BAR */}
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
 
-          {/* File upload */}
           <input
             ref={fileInputRef}
             type="file"
@@ -504,7 +322,6 @@ export default function App() {
             📎
           </button>
 
-          {/* Text input */}
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -513,7 +330,6 @@ export default function App() {
             placeholder="Talk to your higher self..."
           />
 
-          {/* Voice record — hold to record */}
           <button
             style={{
               ...btn,
@@ -531,7 +347,6 @@ export default function App() {
             {isRecording ? "⏹" : "🎙"}
           </button>
 
-          {/* Send */}
           <button style={btn} onClick={sendMessage}>
             Send
           </button>
@@ -561,22 +376,6 @@ const btn = {
   cursor: "pointer"
 };
 
-const btnOutline = {
-  padding: "12px 20px",
-  borderRadius: 10,
-  border: "1.5px solid rgba(255,255,255,0.5)",
-  background: "transparent",
-  color: "white",
-  cursor: "pointer"
-};
-
-const inputStyle = {
-  display: "block",
-  margin: "10px auto",
-  padding: "10px",
-  width: 300
-};
-
 const inputBar = {
   flex: 1,
   padding: 12,
@@ -585,7 +384,7 @@ const inputBar = {
 };
 
 const chatBox = {
-  height: 400,
+  height: "calc(100vh - 220px)",
   overflowY: "auto",
   padding: 15,
   marginBottom: 20,
@@ -600,49 +399,11 @@ const darkOverlay = {
   zIndex: 1
 };
 
-const homeStyle = {
-  height: "100vh",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  color: "white",
-  position: "relative",
-  overflow: "hidden"
-};
-
-const homeContent = {
-  textAlign: "center",
-  position: "relative",
-  zIndex: 2
-};
-
 const chatPage = {
   minHeight: "100vh",
   background: "url('https://images.unsplash.com/photo-1446776811953-b23d57bd21aa') center/cover",
   color: "white",
-  padding: 40
-};
-
-const slide = () => ({
-  height: "100vh",
-  width: "100%",
-  backgroundSize: "cover",
-  backgroundPosition: "center",
+  padding: 40,
   position: "relative",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  color: "white"
-});
-
-function Overlay() {
-  return <div style={darkOverlay} />;
-}
-
-function Content({ children }) {
-  return (
-    <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "0 20px" }}>
-      {children}
-    </div>
-  );
-}
+  overflow: "hidden"
+};
