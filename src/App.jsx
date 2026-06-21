@@ -56,7 +56,6 @@ export default function App() {
   const fileInputRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
-  const voicesRef = useRef([]);
 
   /* ========================
      INIT
@@ -72,13 +71,6 @@ export default function App() {
         winScore: null
       }
     ]);
-
-    function loadVoices() {
-      voicesRef.current = window.speechSynthesis.getVoices();
-    }
-
-    loadVoices();
-    window.speechSynthesis.onvoiceschanged = loadVoices;
   }, []);
 
   useEffect(() => {
@@ -89,31 +81,33 @@ export default function App() {
   }, [messages]);
 
   /* ========================
-     VOICE
+     VOICE — PlayHT (Southern accent)
+     Falls back to browser voice if PlayHT fails
   ======================== */
-  function speak(text) {
-    if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
+  async function speak(text) {
+    try {
+      const res = await fetch("https://ai-backend-fyyw.onrender.com/api/speak", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    const voices = voicesRef.current;
+      if (!res.ok) throw new Error("Voice failed");
 
-    const preferred =
-      voices.find(v => v.name.includes("Google UK English Male")) ||
-      voices.find(v => v.name.includes("Daniel")) ||
-      voices.find(v => v.name.includes("Aaron")) ||
-      voices.find(v => v.name.includes("Google US English")) ||
-      voices.find(v => v.lang === "en-US" && !v.name.toLowerCase().includes("female")) ||
-      voices.find(v => v.lang === "en-US") ||
-      voices[0];
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.play();
 
-    if (preferred) utterance.voice = preferred;
-
-    utterance.rate = 0.88;
-    utterance.pitch = 0.75;
-    utterance.volume = 1;
-
-    window.speechSynthesis.speak(utterance);
+    } catch (err) {
+      console.log("Voice error, falling back to browser voice:", err);
+      if (!window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.88;
+      utterance.pitch = 0.75;
+      window.speechSynthesis.speak(utterance);
+    }
   }
 
   /* ========================
