@@ -28,36 +28,105 @@ function StarField() {
 }
 
 /* ========================
-   FUTURE SELF ONBOARDING
+   WINNERS IMAGE ASSESSMENT
 ======================== */
-function FutureSelfOnboarding({ onComplete }) {
+function WinnersImageAssessment({ onComplete }) {
   const questions = [
-    { field: "becoming", question: "Who are you becoming?", placeholder: "Describe the person you're evolving into..." },
-    { field: "beliefs", question: "What does that person believe about themselves?", placeholder: "Their core beliefs..." },
-    { field: "habits", question: "What habits do they live by daily?", placeholder: "The non-negotiables..." },
-    { field: "building", question: "What are they building or working toward?", placeholder: "Their mission..." },
-    { field: "pain", question: "What pain or version of yourself are you leaving behind?", placeholder: "What you're walking away from..." },
-    { field: "affirmations", question: "Give me 3 affirmations for this person. Say them like they're already true.", placeholder: "I am... I have... I create..." }
+    {
+      number: 1,
+      title: "Your Ideal Self",
+      question: "What does the version of you that has already won look like?",
+      detail: "Be as detailed as possible. This is your vision. Don't limit yourself based on your current circumstances. If you can clearly see it in your mind and emotionally connect with it, you're already taking the first step toward becoming it.",
+      field: "idealSelf",
+      placeholder: "Describe this person in detail — how they think, what they do, how they carry themselves..."
+    },
+    {
+      number: 2,
+      title: "Your Environment",
+      question: "Describe the environment that surrounds your ideal self.",
+      detail: "Think about the people around you, where you live, what you do daily, and the energy you're exposed to. How does this environment affect you mentally, physically, spiritually, financially, and emotionally?",
+      field: "environment",
+      placeholder: "The people, places, energy, and daily life of the person you're becoming..."
+    },
+    {
+      number: 3,
+      title: "Mental Barriers",
+      question: "Within the last 3–6 months, have you struggled with worry, doubt, fear, indecision, or lack of confidence?",
+      detail: "If so, explain why you believe these thoughts or feelings have been showing up in your life. Be honest — this is just between you and your future self.",
+      field: "mentalBarriers",
+      placeholder: "What's been showing up mentally and why you think it's been there..."
+    },
+    {
+      number: 4,
+      title: "The Past",
+      question: "Is there anything from your past that still affects you today?",
+      detail: "This could be childhood experiences, relationships, failures, disappointments, regrets, or losses. Has it affected your actions, thoughts, confidence, or decision-making within the last year?",
+      field: "past",
+      placeholder: "What from your past still has a hold on you, and how it shows up today..."
+    },
+    {
+      number: 5,
+      title: "Satisfaction vs. Growth",
+      question: "If you achieved everything you currently want in life, would you be satisfied or would you continue striving for more?",
+      detail: "Whether it's financial freedom, personal growth, stronger relationships, spiritual fulfillment, or a closer relationship with God — why do you feel that way?",
+      field: "satisfaction",
+      placeholder: "What drives you beyond achievement — what you're really after..."
+    },
+    {
+      number: 6,
+      title: "The Cost of Staying the Same",
+      question: "If nothing changes over the next 5 years and you continue living exactly as you are today, what does your life look like?",
+      detail: "Be honest. How would that future make you feel? What opportunities, relationships, goals, or experiences would you lose by remaining the same person?",
+      field: "costOfSame",
+      placeholder: "Paint the picture of the life you'd be living if nothing changes — be real with yourself..."
+    }
   ];
 
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const [value, setValue] = useState("");
+  const [generating, setGenerating] = useState(false);
 
-  function handleNext() {
+  const q = questions[step];
+  const progress = (step / questions.length) * 100;
+
+  async function handleNext() {
     if (!value.trim()) return;
-    const updated = { ...answers, [questions[step].field]: value };
+    const updated = { ...answers, [q.field]: value };
     setAnswers(updated);
     setValue("");
+
     if (step + 1 < questions.length) {
       setStep(step + 1);
     } else {
-      onComplete(updated);
+      setGenerating(true);
+      await onComplete(updated);
     }
   }
 
-  const q = questions[step];
-  const progress = ((step) / questions.length) * 100;
+  if (generating) {
+    return (
+      <div style={{
+        minHeight: "100vh", display: "flex", flexDirection: "column",
+        justifyContent: "center", alignItems: "center",
+        background: "url('https://images.unsplash.com/photo-1446776811953-b23d57bd21aa') center/cover",
+        color: "white", position: "relative", overflow: "hidden",
+        fontFamily: "system-ui, sans-serif"
+      }}>
+        <StarField />
+        <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 1 }} />
+        <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "0 24px" }}>
+          <div style={{ fontSize: 48, marginBottom: 24 }}>⚡</div>
+          <h2 style={{ fontSize: 28, fontWeight: 900, letterSpacing: 2, marginBottom: 12 }}>
+            Creating Your Winner's Image...
+          </h2>
+          <p style={{ color: "rgba(255,200,60,0.8)", fontSize: 15, letterSpacing: 1 }}>
+            Analyzing your vision and building your identity
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{
@@ -68,59 +137,78 @@ function FutureSelfOnboarding({ onComplete }) {
       fontFamily: "system-ui, sans-serif"
     }}>
       <StarField />
-      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 1 }} />
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.82)", zIndex: 1 }} />
 
-      <div style={{ position: "relative", zIndex: 2, width: "100%", maxWidth: 480 }}>
+      <div style={{ position: "relative", zIndex: 2, width: "100%", maxWidth: 500 }}>
 
-        {/* Progress */}
-        <div style={{ marginBottom: 32 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 8 }}>
-            <span>Building Your Future Self</span>
-            <span>{step + 1} of {questions.length}</span>
+        {/* Header */}
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <div style={{ fontSize: 11, letterSpacing: 4, color: "rgba(255,200,60,0.8)", textTransform: "uppercase", marginBottom: 6 }}>
+            Winner's Image Assessment
           </div>
-          <div style={{ height: 3, background: "rgba(255,255,255,0.15)", borderRadius: 2 }}>
-            <div style={{ height: "100%", width: progress + "%", background: "linear-gradient(90deg,#ff8c00,#ff2e63)", borderRadius: 2, transition: "width 0.4s ease" }} />
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", letterSpacing: 1 }}>
+            Question {step + 1} of {questions.length}
           </div>
         </div>
 
-        {/* Question */}
-        <h2 style={{ fontSize: "clamp(22px, 6vw, 32px)", fontWeight: 800, lineHeight: 1.2, marginBottom: 24, letterSpacing: -0.5 }}>
+        {/* Progress */}
+        <div style={{ height: 2, background: "rgba(255,255,255,0.1)", borderRadius: 2, marginBottom: 32 }}>
+          <div style={{
+            height: "100%", width: progress + "%",
+            background: "linear-gradient(90deg,#ff8c00,#ff2e63)",
+            borderRadius: 2, transition: "width 0.5s ease"
+          }} />
+        </div>
+
+        {/* Question number + title */}
+        <div style={{
+          display: "inline-block", padding: "4px 14px", borderRadius: 20,
+          background: "rgba(255,140,0,0.15)", border: "1px solid rgba(255,140,0,0.3)",
+          fontSize: 12, letterSpacing: 1, color: "rgba(255,200,60,0.9)",
+          textTransform: "uppercase", marginBottom: 16
+        }}>
+          Question {q.number} — {q.title}
+        </div>
+
+        <h2 style={{ fontSize: "clamp(20px, 5vw, 28px)", fontWeight: 800, lineHeight: 1.25, marginBottom: 14, margin: "0 0 14px" }}>
           {q.question}
         </h2>
 
-        {/* Input */}
+        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", lineHeight: 1.7, marginBottom: 24 }}>
+          {q.detail}
+        </p>
+
         <textarea
           value={value}
           onChange={e => setValue(e.target.value)}
           placeholder={q.placeholder}
-          rows={4}
+          rows={5}
           autoFocus
           style={{
             width: "100%", boxSizing: "border-box", padding: "16px",
-            borderRadius: 16, border: "1px solid rgba(255,255,255,0.2)",
-            background: "rgba(255,255,255,0.08)", color: "white",
-            fontSize: 16, fontFamily: "system-ui, sans-serif",
-            resize: "none", outline: "none", lineHeight: 1.6,
-            marginBottom: 16
+            borderRadius: 16, border: "1px solid rgba(255,255,255,0.15)",
+            background: "rgba(255,255,255,0.07)", color: "white",
+            fontSize: 15, fontFamily: "system-ui, sans-serif",
+            resize: "none", outline: "none", lineHeight: 1.6, marginBottom: 16
           }}
-          onKeyDown={e => { if (e.key === "Enter" && e.metaKey) handleNext(); }}
         />
 
         <button onClick={handleNext} style={{
           width: "100%", padding: "16px", fontSize: 16, fontWeight: 700,
           borderRadius: 50, border: "none",
-          background: value.trim() ? "linear-gradient(45deg,#ff8c00,#ff2e63)" : "rgba(255,255,255,0.1)",
-          color: value.trim() ? "white" : "rgba(255,255,255,0.3)",
-          cursor: value.trim() ? "pointer" : "default", letterSpacing: 1
+          background: value.trim() ? "linear-gradient(45deg,#ff8c00,#ff2e63)" : "rgba(255,255,255,0.08)",
+          color: value.trim() ? "white" : "rgba(255,255,255,0.25)",
+          cursor: value.trim() ? "pointer" : "default", letterSpacing: 1,
+          transition: "all 0.3s"
         }}>
-          {step + 1 === questions.length ? "Complete My Profile 🔥" : "Continue →"}
+          {step + 1 === questions.length ? "Create My Winner's Image 🔥" : "Continue →"}
         </button>
 
         {step > 0 && (
           <button onClick={() => { setStep(step - 1); setValue(""); }} style={{
             width: "100%", marginTop: 12, padding: "12px",
             background: "transparent", border: "none",
-            color: "rgba(255,255,255,0.4)", fontSize: 14, cursor: "pointer"
+            color: "rgba(255,255,255,0.3)", fontSize: 14, cursor: "pointer"
           }}>
             ← Back
           </button>
@@ -131,24 +219,113 @@ function FutureSelfOnboarding({ onComplete }) {
 }
 
 /* ========================
+   WINNER'S IMAGE REVEAL
+======================== */
+function WinnersImageReveal({ profile, onEnterApp }) {
+  return (
+    <div style={{
+      minHeight: "100vh", display: "flex", flexDirection: "column",
+      justifyContent: "center", alignItems: "center",
+      background: "url('https://images.unsplash.com/photo-1446776811953-b23d57bd21aa') center/cover",
+      color: "white", padding: "32px 20px", position: "relative", overflow: "hidden",
+      fontFamily: "system-ui, sans-serif"
+    }}>
+      <StarField />
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.82)", zIndex: 1 }} />
+
+      <div style={{ position: "relative", zIndex: 2, width: "100%", maxWidth: 500 }}>
+
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <div style={{ fontSize: 11, letterSpacing: 4, color: "rgba(255,200,60,0.8)", textTransform: "uppercase", marginBottom: 12 }}>
+            Your Winner's Image Has Been Created
+          </div>
+          <h1 style={{ fontSize: "clamp(28px, 8vw, 48px)", fontWeight: 900, lineHeight: 1.1, margin: 0, letterSpacing: -1 }}>
+            This Is Who<br />You're Becoming
+          </h1>
+        </div>
+
+        {/* Identity Statement */}
+        <div style={{
+          padding: "24px 20px", borderRadius: 20, marginBottom: 16,
+          background: "rgba(255,140,0,0.1)", border: "1px solid rgba(255,140,0,0.25)"
+        }}>
+          <div style={{ fontSize: 10, letterSpacing: 3, color: "rgba(255,200,60,0.8)", textTransform: "uppercase", marginBottom: 12 }}>
+            Your Identity Statement
+          </div>
+          <p style={{ fontSize: 16, lineHeight: 1.7, margin: 0, color: "white", fontWeight: 500 }}>
+            {profile.identityStatement}
+          </p>
+        </div>
+
+        {/* Affirmations */}
+        {profile.affirmations?.length > 0 && (
+          <div style={{
+            padding: "24px 20px", borderRadius: 20, marginBottom: 16,
+            background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)"
+          }}>
+            <div style={{ fontSize: 10, letterSpacing: 3, color: "rgba(255,200,60,0.8)", textTransform: "uppercase", marginBottom: 14 }}>
+              Your Winner's Image Affirmations
+            </div>
+            {profile.affirmations.map((a, i) => (
+              <div key={i} style={{
+                padding: "10px 14px", borderRadius: 12, marginBottom: 8,
+                background: "rgba(255,255,255,0.05)",
+                borderLeft: "3px solid rgba(255,140,0,0.6)",
+                fontSize: 15, color: "white", lineHeight: 1.5
+              }}>
+                {a}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Daily Plan Preview */}
+        {profile.dailyPlan && (
+          <div style={{
+            padding: "24px 20px", borderRadius: 20, marginBottom: 24,
+            background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)"
+          }}>
+            <div style={{ fontSize: 10, letterSpacing: 3, color: "rgba(255,200,60,0.8)", textTransform: "uppercase", marginBottom: 14 }}>
+              Your Daily Identity Plan
+            </div>
+            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", lineHeight: 1.7, margin: 0 }}>
+              {profile.dailyPlan}
+            </p>
+          </div>
+        )}
+
+        <button onClick={onEnterApp} style={{
+          width: "100%", padding: "18px", fontSize: 17, fontWeight: 800,
+          borderRadius: 50, border: "none",
+          background: "linear-gradient(45deg,#ff8c00,#ff2e63)",
+          color: "white", cursor: "pointer", letterSpacing: 1
+        }}>
+          Enter Winner's Image Nation 🏆
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ========================
    MAIN APP
 ======================== */
 export default function App() {
-  const TABS = { CHAT: "chat", FUTURE_SELF: "future_self", AFFIRMATIONS: "affirmations", CHECKIN: "checkin" };
+  const TABS = { COACH: "coach", IDENTITY: "identity", CHECKIN: "checkin" };
+  const SCREENS = { ASSESSMENT: "assessment", REVEAL: "reveal", APP: "app" };
 
-  const [tab, setTab] = useState(TABS.CHAT);
-  const [futureSelf, setFutureSelf] = useState(null);
-  const [onboarded, setOnboarded] = useState(false);
+  const [screen, setScreen] = useState(SCREENS.ASSESSMENT);
+  const [tab, setTab] = useState(TABS.COACH);
+  const [profile, setProfile] = useState(null);
+  const [rawAnswers, setRawAnswers] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [actAsIfMode, setActAsIfMode] = useState(false);
-  const [affirmations, setAffirmations] = useState([]);
-  const [newAffirmation, setNewAffirmation] = useState("");
-  const [checkIn, setCheckIn] = useState({ matched: "", proved: "", fell: "", tomorrow: "" });
   const [checkInStep, setCheckInStep] = useState(0);
+  const [checkIn, setCheckIn] = useState({ matched: "", proved: "", fell: "", tomorrow: "" });
   const [checkInDone, setCheckInDone] = useState(false);
-  const [alignmentScore, setAlignmentScore] = useState(null);
+  const [todayActions, setTodayActions] = useState([]);
 
   const chatRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -157,35 +334,69 @@ export default function App() {
 
   useEffect(() => {
     posthog.capture("app_opened");
-    const saved = localStorage.getItem("futureSelf");
-    const savedAffirmations = localStorage.getItem("affirmations");
-    if (saved) { setFutureSelf(JSON.parse(saved)); setOnboarded(true); }
-    if (savedAffirmations) setAffirmations(JSON.parse(savedAffirmations));
+    const saved = localStorage.getItem("winnersProfile");
+    const savedAnswers = localStorage.getItem("winnersAnswers");
+    if (saved) {
+      setProfile(JSON.parse(saved));
+      setRawAnswers(savedAnswers ? JSON.parse(savedAnswers) : null);
+      setScreen(SCREENS.APP);
+    }
   }, []);
 
   useEffect(() => {
-    if (onboarded && messages.length === 0) {
-      const greeting = futureSelf
-        ? `You told me you're becoming ${futureSelf.becoming}. I'm holding you to that. What's on your mind today?`
-        : "Aye... I see potential in you already. Talk to me.";
+    if (screen === SCREENS.APP && messages.length === 0 && profile) {
+      const greeting = `${profile.identityStatement} That's who you are. Now talk to me — what's on your mind today?`;
       setMessages([{ sender: "ai", text: greeting, media: [] }]);
+
+      // Generate today's actions
+      const actions = [
+        `Read your Winner's Image statement out loud — feel it, don't just say it`,
+        `Say your affirmations out loud every morning. Not in your head. Out loud.`,
+        `Visualize being ${rawAnswers?.idealSelf?.split(" ").slice(0, 8).join(" ") || "your future self"} for 5 minutes — close your eyes and feel it`,
+        `Complete one action today that moves you toward ${rawAnswers?.environment?.split(" ").slice(0, 6).join(" ") || "your ideal life"}`
+      ];
+      setTodayActions(actions);
     }
-  }, [onboarded]);
+  }, [screen, profile]);
 
   useEffect(() => {
     chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  function handleOnboardingComplete(answers) {
-    const profile = { ...answers, createdAt: new Date().toISOString() };
-    setFutureSelf(profile);
-    setOnboarded(true);
-    if (answers.affirmations) {
-      const parsed = answers.affirmations.split(/[.!\n]/).map(s => s.trim()).filter(Boolean);
-      setAffirmations(parsed);
-      localStorage.setItem("affirmations", JSON.stringify(parsed));
+  /* ========================
+     ASSESSMENT COMPLETE
+  ======================== */
+  async function handleAssessmentComplete(answers) {
+    setRawAnswers(answers);
+    try {
+      const res = await fetch("https://ai-backend-fyyw.onrender.com/api/create-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers })
+      });
+      const data = await res.json();
+      const fullProfile = { ...data, answers };
+      setProfile(fullProfile);
+      localStorage.setItem("winnersProfile", JSON.stringify(fullProfile));
+      localStorage.setItem("winnersAnswers", JSON.stringify(answers));
+      setScreen(SCREENS.REVEAL);
+    } catch {
+      // Fallback profile if API fails
+      const fallback = {
+        identityStatement: `You are becoming the person you described — disciplined, focused, and unstoppable. You no longer allow doubt or past experiences to define your future. You are building a life aligned with your highest potential.`,
+        affirmations: [
+          "I act with confidence even when I feel uncertain.",
+          "My past does not define my future.",
+          "I am becoming who I was always meant to be."
+        ],
+        dailyPlan: "Every morning: read your identity statement, say your affirmations out loud, visualize your ideal self for 5 minutes. Every night: reflect on whether your actions matched your future identity.",
+        answers
+      };
+      setProfile(fallback);
+      localStorage.setItem("winnersProfile", JSON.stringify(fallback));
+      localStorage.setItem("winnersAnswers", JSON.stringify(answers));
+      setScreen(SCREENS.REVEAL);
     }
-    localStorage.setItem("futureSelf", JSON.stringify(profile));
   }
 
   /* ========================
@@ -200,8 +411,7 @@ export default function App() {
       });
       if (!res.ok) throw new Error("Voice failed");
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      new Audio(url).play();
+      new Audio(URL.createObjectURL(blob)).play();
     } catch {
       if (!window.speechSynthesis) return;
       window.speechSynthesis.cancel();
@@ -225,7 +435,7 @@ export default function App() {
       const url = URL.createObjectURL(blob);
       setMessages(prev => [...prev, { sender: "user", text: null, media: [{ type: "audio", url }] }]);
       stream.getTracks().forEach(t => t.stop());
-      sendMessageWithText("I just sent a voice message — respond with motivation and guidance based on who I'm becoming.");
+      sendMessageWithText("I just sent a voice message. Respond based on my Winner's Image profile.");
     };
     mr.start();
     setIsRecording(true);
@@ -239,7 +449,7 @@ export default function App() {
     const url = URL.createObjectURL(file);
     const type = file.type.startsWith("video") ? "video" : "image";
     setMessages(prev => [...prev, { sender: "user", text: null, media: [{ type, url }] }]);
-    sendMessageWithText(`I just shared a ${type}. Respond with relevant insight tied to who I'm becoming.`);
+    sendMessageWithText(`I just shared a ${type}. Respond with insight tied to my Winner's Image.`);
   }
 
   /* ========================
@@ -258,9 +468,9 @@ export default function App() {
       const res = await fetch("https://ai-backend-fyyw.onrender.com/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, futureSelf, actAsIfMode })
+        body: JSON.stringify({ message: text, profile, actAsIfMode })
       });
-      if (!res.ok) throw new Error("Server error: " + res.status);
+      if (!res.ok) throw new Error("Server error");
       const data = await res.json();
       setMessages(prev => [...prev, {
         sender: "ai", text: data.reply, media: [
@@ -275,67 +485,32 @@ export default function App() {
   }
 
   /* ========================
-     CHECK IN FLOW
+     CHECK IN SUBMIT
   ======================== */
-  const checkInQuestions = [
-    { key: "matched", q: "Did your actions today match who you're becoming? Be honest." },
-    { key: "proved", q: "What did you do today that proved you're changing?" },
-    { key: "fell", q: "Where did you fall short? No judgment — just honesty." },
-    { key: "tomorrow", q: "What's the one move you're making tomorrow, no excuses?" }
-  ];
-
   async function submitCheckIn() {
-    const score = Math.round(
-      (checkIn.proved.length > 10 ? 25 : 0) +
-      (checkIn.matched.toLowerCase().includes("yes") ? 25 : 10) +
-      (checkIn.tomorrow.length > 10 ? 25 : 0) +
-      (checkIn.fell.length > 0 ? 15 : 0)
-    );
-    setAlignmentScore(score);
     setCheckInDone(true);
-    await sendMessageWithText(`Daily check-in: Matched my future self: ${checkIn.matched}. What I proved: ${checkIn.proved}. Where I fell short: ${checkIn.fell}. Tomorrow's move: ${checkIn.tomorrow}. Give me real feedback on this.`);
-    setTab(TABS.CHAT);
-  }
-
-  /* ========================
-     AFFIRMATIONS
-  ======================== */
-  async function addAffirmation() {
-    if (!newAffirmation.trim()) return;
-    const updated = [...affirmations, newAffirmation.trim()];
-    setAffirmations(updated);
-    localStorage.setItem("affirmations", JSON.stringify(updated));
-    setNewAffirmation("");
-    await sendMessageWithText(`Rewrite this affirmation to be stronger and more emotional: "${newAffirmation}"`);
-    setTab(TABS.CHAT);
-  }
-
-  /* ========================
-     SHOW ONBOARDING IF NOT DONE
-  ======================== */
-  if (!onboarded) {
-    return <FutureSelfOnboarding onComplete={handleOnboardingComplete} />;
+    const summary = `Daily check-in — Did I act like my future self: ${checkIn.matched}. What I did well: ${checkIn.proved}. Where I fell short: ${checkIn.fell}. Tomorrow's move: ${checkIn.tomorrow}. Give me real honest feedback on this based on my Winner's Image.`;
+    await sendMessageWithText(summary);
+    setTab(TABS.COACH);
   }
 
   /* ========================
      RENDER MEDIA
   ======================== */
   function renderMedia(media) {
-    return media.map((med, idx) => {
+    return media?.map((med, idx) => {
       if (med.type === "image") return (
-        <div key={idx} style={{ borderRadius: 16, overflow: "hidden", cursor: "pointer", marginTop: 8 }}
+        <div key={idx} style={{ borderRadius: 14, overflow: "hidden", marginTop: 8, cursor: "pointer" }}
           onClick={() => window.open(med.url, "_blank")}>
-          <img src={med.url} alt="" style={{ width: "100%", display: "block", borderRadius: 16 }}
+          <img src={med.url} alt="" style={{ width: "100%", display: "block" }}
             onError={e => e.target.style.display = "none"} />
         </div>
       );
       if (med.type === "video") return (
-        <div key={idx} style={{ borderRadius: 12, overflow: "hidden", background: "#000", marginTop: 8 }}>
-          <video controls playsInline style={{ width: "100%", display: "block", borderRadius: 12, maxHeight: 260 }}
-            onError={e => e.target.style.display = "none"}>
-            <source src={med.url} type="video/mp4" />
-          </video>
-        </div>
+        <video key={idx} controls playsInline style={{ width: "100%", borderRadius: 14, marginTop: 8, maxHeight: 260 }}
+          onError={e => e.target.style.display = "none"}>
+          <source src={med.url} type="video/mp4" />
+        </video>
       );
       if (med.type === "audio") return (
         <audio key={idx} controls src={med.url} style={{ width: "100%", marginTop: 8 }} />
@@ -345,349 +520,46 @@ export default function App() {
   }
 
   /* ========================
-     TAB: CHAT
+     SCREENS
   ======================== */
-  function ChatTab() {
-    return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", position: "relative", zIndex: 2 }}>
+  if (screen === SCREENS.ASSESSMENT) {
+    return <WinnersImageAssessment onComplete={handleAssessmentComplete} />;
+  }
 
-        {/* Act As If Banner */}
-        {actAsIfMode && (
-          <div style={{
-            background: "linear-gradient(45deg,#ff8c00,#ff2e63)",
-            padding: "10px 16px", textAlign: "center",
-            fontSize: 13, fontWeight: 700, letterSpacing: 1
-          }}>
-            ⚡ ACT AS IF MODE — You are your future self today
-          </div>
-        )}
-
-        {/* Messages */}
-        <div ref={chatRef} style={{
-          flex: 1, overflowY: "auto", padding: "16px 12px",
-          display: "flex", flexDirection: "column", gap: 12
-        }}>
-          {messages.map((m, i) => (
-            <div key={i} style={{
-              display: "flex", flexDirection: "column",
-              alignItems: m.sender === "user" ? "flex-end" : "flex-start"
-            }}>
-              {m.text && (
-                <div style={{
-                  background: m.sender === "user"
-                    ? "linear-gradient(45deg,#ff8c00,#ff2e63)"
-                    : "rgba(255,255,255,0.12)",
-                  padding: "12px 16px", borderRadius: m.sender === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
-                  maxWidth: "82%", color: "white", fontSize: 15, lineHeight: 1.55,
-                  backdropFilter: "blur(8px)"
-                }}>
-                  {m.text}
-                </div>
-              )}
-              {m.media?.length > 0 && (
-                <div style={{ maxWidth: "82%" }}>
-                  {renderMedia(m.media)}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Quick commands */}
-        <div style={{ padding: "0 12px 8px", display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {["act as if", "check my progress", "give me an affirmation"].map((cmd, i) => (
-            <button key={i} onClick={() => sendMessageWithText(cmd)} style={{
-              padding: "6px 14px", borderRadius: 20,
-              border: "1px solid rgba(255,255,255,0.2)",
-              background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.8)",
-              fontSize: 12, cursor: "pointer"
-            }}>{cmd}</button>
-          ))}
-        </div>
-
-        {/* Input */}
-        <div style={{ padding: "8px 12px 12px", display: "flex", gap: 8, alignItems: "flex-end" }}>
-          <input ref={fileInputRef} type="file" accept="image/*,video/*"
-            style={{ display: "none" }} onChange={handleFile} />
-          <button onClick={() => fileInputRef.current?.click()} style={iconBtn}>📎</button>
-
-          <input value={input} onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && sendMessage()}
-            placeholder="Talk to your future self..."
-            style={{
-              flex: 1, padding: "12px 16px", borderRadius: 24,
-              border: "1px solid rgba(255,255,255,0.15)",
-              background: "rgba(255,255,255,0.08)", color: "white",
-              fontSize: 15, outline: "none", fontFamily: "system-ui, sans-serif"
-            }} />
-
-          <button onMouseDown={startRecording} onMouseUp={stopRecording}
-            onTouchStart={startRecording} onTouchEnd={stopRecording} style={{
-              ...iconBtn,
-              background: isRecording ? "rgba(255,50,50,0.8)" : "rgba(255,255,255,0.1)"
-            }}>
-            {isRecording ? "⏹" : "🎙"}
-          </button>
-
-          <button onClick={sendMessage} style={{
-            ...iconBtn,
-            background: "linear-gradient(45deg,#ff8c00,#ff2e63)"
-          }}>➤</button>
-        </div>
-
-        {isRecording && (
-          <p style={{ textAlign: "center", fontSize: 12, color: "rgba(255,100,100,0.9)", marginTop: 4 }}>
-            Recording... release to send
-          </p>
-        )}
-      </div>
-    );
+  if (screen === SCREENS.REVEAL) {
+    return <WinnersImageReveal profile={profile} onEnterApp={() => setScreen(SCREENS.APP)} />;
   }
 
   /* ========================
-     TAB: FUTURE SELF
-  ======================== */
-  function FutureSelfTab() {
-    const actAsIfActions = futureSelf ? [
-      `Spend 30 minutes working on ${futureSelf.building || "your goals"} — no phone, no distractions`,
-      `Say your affirmations out loud, then close your eyes and visualize being ${futureSelf.becoming || "your future self"} for 60 seconds`,
-      `Do one thing today that the old version of you would have avoided`
-    ] : [];
-
-    return (
-      <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px", display: "flex", flexDirection: "column", gap: 16, position: "relative", zIndex: 2 }}>
-
-        {/* Profile Card */}
-        <div style={card}>
-          <div style={{ fontSize: 11, letterSpacing: 2, color: "rgba(255,200,60,0.9)", marginBottom: 8, textTransform: "uppercase" }}>
-            Your Future Self
-          </div>
-          <h2 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 12px" }}>
-            {futureSelf?.becoming || "Not set yet"}
-          </h2>
-          {futureSelf?.beliefs && (
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", lineHeight: 1.6, margin: "0 0 8px" }}>
-              <strong style={{ color: "rgba(255,200,60,0.9)" }}>Believes:</strong> {futureSelf.beliefs}
-            </p>
-          )}
-          {futureSelf?.building && (
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", lineHeight: 1.6, margin: "0 0 8px" }}>
-              <strong style={{ color: "rgba(255,200,60,0.9)" }}>Building:</strong> {futureSelf.building}
-            </p>
-          )}
-          {futureSelf?.habits && (
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", lineHeight: 1.6, margin: "0 0 8px" }}>
-              <strong style={{ color: "rgba(255,200,60,0.9)" }}>Daily habits:</strong> {futureSelf.habits}
-            </p>
-          )}
-          {futureSelf?.pain && (
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", lineHeight: 1.6, margin: 0 }}>
-              <strong style={{ color: "rgba(255,200,60,0.9)" }}>Leaving behind:</strong> {futureSelf.pain}
-            </p>
-          )}
-        </div>
-
-        {/* Act As If Mode */}
-        <div style={card}>
-          <div style={{ fontSize: 11, letterSpacing: 2, color: "rgba(255,200,60,0.9)", marginBottom: 8, textTransform: "uppercase" }}>
-            Act As If Mode
-          </div>
-          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", marginBottom: 16, lineHeight: 1.6 }}>
-            Today you are acting as the {futureSelf?.becoming || "best version of yourself"}. Here's what that person does today:
-          </p>
-          {actAsIfActions.map((action, i) => (
-            <div key={i} style={{
-              padding: "12px 14px", borderRadius: 12, marginBottom: 8,
-              background: "rgba(255,255,255,0.06)", fontSize: 14,
-              color: "rgba(255,255,255,0.85)", lineHeight: 1.5,
-              borderLeft: "3px solid rgba(255,140,0,0.6)"
-            }}>
-              {action}
-            </div>
-          ))}
-          <button onClick={() => {
-            setActAsIfMode(!actAsIfMode);
-            setTab(TABS.CHAT);
-          }} style={{
-            marginTop: 8, width: "100%", padding: "14px",
-            borderRadius: 50, border: "none", fontWeight: 700,
-            background: actAsIfMode ? "rgba(255,255,255,0.1)" : "linear-gradient(45deg,#ff8c00,#ff2e63)",
-            color: "white", cursor: "pointer", fontSize: 15
-          }}>
-            {actAsIfMode ? "Deactivate Mode" : "⚡ Activate Act As If"}
-          </button>
-        </div>
-
-        {/* Alignment Score */}
-        {alignmentScore !== null && (
-          <div style={card}>
-            <div style={{ fontSize: 11, letterSpacing: 2, color: "rgba(255,200,60,0.9)", marginBottom: 8, textTransform: "uppercase" }}>
-              Identity Alignment
-            </div>
-            <div style={{ fontSize: 48, fontWeight: 900, color: alignmentScore >= 70 ? "#00c853" : alignmentScore >= 40 ? "#ff8c00" : "#ff2e63" }}>
-              {alignmentScore}%
-            </div>
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", margin: "4px 0 0" }}>
-              {alignmentScore >= 70 ? "You moved like your future self today." : alignmentScore >= 40 ? "You showed up partially. Keep pushing." : "Tomorrow is a fresh start. Make it count."}
-            </p>
-          </div>
-        )}
-
-        {/* Reset Profile */}
-        <button onClick={() => {
-          localStorage.removeItem("futureSelf");
-          localStorage.removeItem("affirmations");
-          setFutureSelf(null);
-          setOnboarded(false);
-          setMessages([]);
-        }} style={{
-          padding: "12px", borderRadius: 50, border: "1px solid rgba(255,255,255,0.15)",
-          background: "transparent", color: "rgba(255,255,255,0.4)",
-          fontSize: 13, cursor: "pointer"
-        }}>
-          Rebuild My Future Self Profile
-        </button>
-      </div>
-    );
-  }
-
-  /* ========================
-     TAB: AFFIRMATIONS
-  ======================== */
-  function AffirmationsTab() {
-    return (
-      <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px", display: "flex", flexDirection: "column", gap: 12, position: "relative", zIndex: 2 }}>
-        <div style={{ fontSize: 11, letterSpacing: 2, color: "rgba(255,200,60,0.9)", marginBottom: 4, textTransform: "uppercase" }}>
-          Boss Affirmations
-        </div>
-        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 8 }}>
-          Say these out loud every morning. Not in your head. Out loud.
-        </p>
-
-        {affirmations.map((a, i) => (
-          <div key={i} style={{
-            padding: "16px", borderRadius: 16,
-            background: "rgba(255,255,255,0.08)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            fontSize: 16, fontWeight: 600, lineHeight: 1.5, color: "white",
-            borderLeft: "3px solid rgba(255,140,0,0.7)"
-          }}>
-            {a}
-          </div>
-        ))}
-
-        <div style={{ marginTop: 8 }}>
-          <input value={newAffirmation} onChange={e => setNewAffirmation(e.target.value)}
-            placeholder='Add one — "I am..." "I have..." "I create..."'
-            style={{
-              width: "100%", boxSizing: "border-box", padding: "14px 16px",
-              borderRadius: 16, border: "1px solid rgba(255,255,255,0.15)",
-              background: "rgba(255,255,255,0.08)", color: "white",
-              fontSize: 15, outline: "none", marginBottom: 10,
-              fontFamily: "system-ui, sans-serif"
-            }} />
-          <button onClick={addAffirmation} style={{
-            width: "100%", padding: "14px", borderRadius: 50, border: "none",
-            background: "linear-gradient(45deg,#ff8c00,#ff2e63)",
-            color: "white", fontWeight: 700, fontSize: 15, cursor: "pointer"
-          }}>
-            Add + Let AI Make It Stronger
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  /* ========================
-     TAB: CHECK IN
-  ======================== */
-  function CheckInTab() {
-    if (checkInDone) {
-      return (
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: 24, position: "relative", zIndex: 2 }}>
-          <div style={{ fontSize: 64, marginBottom: 16 }}>🔥</div>
-          <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8 }}>Check-in complete</h2>
-          <p style={{ color: "rgba(255,255,255,0.6)", textAlign: "center", marginBottom: 24 }}>
-            Your AI coach is processing your day. Check the chat for feedback.
-          </p>
-          <button onClick={() => setTab(TABS.CHAT)} style={{
-            padding: "14px 32px", borderRadius: 50, border: "none",
-            background: "linear-gradient(45deg,#ff8c00,#ff2e63)",
-            color: "white", fontWeight: 700, fontSize: 15, cursor: "pointer"
-          }}>
-            See Feedback →
-          </button>
-        </div>
-      );
-    }
-
-    const q = checkInQuestions[checkInStep];
-
-    return (
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "24px 16px", position: "relative", zIndex: 2 }}>
-        <div style={{ fontSize: 11, letterSpacing: 2, color: "rgba(255,200,60,0.9)", marginBottom: 16, textTransform: "uppercase" }}>
-          Daily Identity Check-In • {checkInStep + 1} of {checkInQuestions.length}
-        </div>
-        <h2 style={{ fontSize: "clamp(20px, 5vw, 28px)", fontWeight: 800, marginBottom: 24, lineHeight: 1.3 }}>
-          {q.q}
-        </h2>
-        <textarea
-          value={checkIn[q.key]}
-          onChange={e => setCheckIn(prev => ({ ...prev, [q.key]: e.target.value }))}
-          rows={4} placeholder="Be honest..."
-          style={{
-            width: "100%", boxSizing: "border-box", padding: "16px",
-            borderRadius: 16, border: "1px solid rgba(255,255,255,0.15)",
-            background: "rgba(255,255,255,0.08)", color: "white",
-            fontSize: 15, resize: "none", outline: "none",
-            fontFamily: "system-ui, sans-serif", lineHeight: 1.6, marginBottom: 16
-          }}
-        />
-        <button onClick={() => {
-          if (checkInStep + 1 < checkInQuestions.length) {
-            setCheckInStep(checkInStep + 1);
-          } else {
-            submitCheckIn();
-          }
-        }} style={{
-          width: "100%", padding: "16px", borderRadius: 50, border: "none",
-          background: "linear-gradient(45deg,#ff8c00,#ff2e63)",
-          color: "white", fontWeight: 700, fontSize: 15, cursor: "pointer"
-        }}>
-          {checkInStep + 1 === checkInQuestions.length ? "Submit Check-In 🔥" : "Next →"}
-        </button>
-      </div>
-    );
-  }
-
-  /* ========================
-     MAIN RENDER WITH TABS
+     MAIN APP TABS
   ======================== */
   return (
     <div style={{
       height: "100vh", display: "flex", flexDirection: "column",
       background: "url('https://images.unsplash.com/photo-1446776811953-b23d57bd21aa') center/cover",
-      color: "white", fontFamily: "system-ui, sans-serif", position: "relative", overflow: "hidden"
+      color: "white", fontFamily: "system-ui, sans-serif",
+      position: "relative", overflow: "hidden"
     }}>
       <StarField />
-      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 1 }} />
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.78)", zIndex: 1 }} />
 
       {/* HEADER */}
       <div style={{
-        position: "relative", zIndex: 2, padding: "16px 16px 10px",
-        borderBottom: "1px solid rgba(255,255,255,0.08)",
-        background: "rgba(0,0,0,0.3)", backdropFilter: "blur(10px)",
+        position: "relative", zIndex: 2,
+        padding: "14px 16px 10px",
+        borderBottom: "1px solid rgba(255,255,255,0.07)",
+        background: "rgba(0,0,0,0.35)", backdropFilter: "blur(10px)",
         display: "flex", alignItems: "center", justifyContent: "space-between"
       }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 18, fontWeight: 800, letterSpacing: 1 }}>W·I·N</h1>
-          <div style={{ fontSize: 10, color: "rgba(255,200,60,0.8)", letterSpacing: 2, textTransform: "uppercase" }}>
-            Winners Image Nation
+          <h1 style={{ margin: 0, fontSize: 17, fontWeight: 900, letterSpacing: 2 }}>W·I·N</h1>
+          <div style={{ fontSize: 9, color: "rgba(255,200,60,0.7)", letterSpacing: 2, textTransform: "uppercase" }}>
+            Winner's Image Nation
           </div>
         </div>
         {actAsIfMode && (
           <div style={{
-            padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700,
+            padding: "4px 12px", borderRadius: 20, fontSize: 10, fontWeight: 700,
             background: "linear-gradient(45deg,#ff8c00,#ff2e63)", letterSpacing: 1
           }}>
             ⚡ ACT AS IF
@@ -697,33 +569,241 @@ export default function App() {
 
       {/* TAB CONTENT */}
       <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", position: "relative", zIndex: 2 }}>
-        {tab === TABS.CHAT && <ChatTab />}
-        {tab === TABS.FUTURE_SELF && <FutureSelfTab />}
-        {tab === TABS.AFFIRMATIONS && <AffirmationsTab />}
-        {tab === TABS.CHECKIN && <CheckInTab />}
+
+        {/* ---- COACH TAB ---- */}
+        {tab === TABS.COACH && (
+          <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+            <div ref={chatRef} style={{
+              flex: 1, overflowY: "auto", padding: "14px 12px",
+              display: "flex", flexDirection: "column", gap: 10
+            }}>
+              {messages.map((m, i) => (
+                <div key={i} style={{
+                  display: "flex", flexDirection: "column",
+                  alignItems: m.sender === "user" ? "flex-end" : "flex-start"
+                }}>
+                  {m.text && (
+                    <div style={{
+                      background: m.sender === "user"
+                        ? "linear-gradient(45deg,#ff8c00,#ff2e63)"
+                        : "rgba(255,255,255,0.1)",
+                      padding: "12px 15px",
+                      borderRadius: m.sender === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+                      maxWidth: "84%", color: "white", fontSize: 15, lineHeight: 1.55,
+                      backdropFilter: "blur(6px)"
+                    }}>
+                      {m.text}
+                    </div>
+                  )}
+                  {m.media?.length > 0 && (
+                    <div style={{ maxWidth: "84%" }}>{renderMedia(m.media)}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Quick commands */}
+            <div style={{ padding: "0 12px 6px", display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {["act as if today", "check my progress", "remind me who I am"].map((cmd, i) => (
+                <button key={i} onClick={() => sendMessageWithText(cmd)} style={{
+                  padding: "5px 12px", borderRadius: 20,
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.7)",
+                  fontSize: 11, cursor: "pointer"
+                }}>{cmd}</button>
+              ))}
+            </div>
+
+            {/* Input bar */}
+            <div style={{ padding: "6px 12px 12px", display: "flex", gap: 8, alignItems: "flex-end" }}>
+              <input ref={fileInputRef} type="file" accept="image/*,video/*"
+                style={{ display: "none" }} onChange={handleFile} />
+              <button onClick={() => fileInputRef.current?.click()} style={iconBtn}>📎</button>
+              <input value={input} onChange={e => setInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && sendMessage()}
+                placeholder="Talk to your future self..."
+                style={{
+                  flex: 1, padding: "12px 16px", borderRadius: 24,
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  background: "rgba(255,255,255,0.07)", color: "white",
+                  fontSize: 15, outline: "none", fontFamily: "system-ui, sans-serif"
+                }} />
+              <button onMouseDown={startRecording} onMouseUp={stopRecording}
+                onTouchStart={startRecording} onTouchEnd={stopRecording}
+                style={{ ...iconBtn, background: isRecording ? "rgba(255,50,50,0.8)" : "rgba(255,255,255,0.08)" }}>
+                {isRecording ? "⏹" : "🎙"}
+              </button>
+              <button onClick={sendMessage} style={{ ...iconBtn, background: "linear-gradient(45deg,#ff8c00,#ff2e63)" }}>
+                ➤
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ---- IDENTITY TAB ---- */}
+        {tab === TABS.IDENTITY && (
+          <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px", display: "flex", flexDirection: "column", gap: 14 }}>
+
+            {/* Today's Winner's Image */}
+            <div style={card}>
+              <div style={cardLabel}>Today's Winner's Image</div>
+              <p style={{ fontSize: 15, lineHeight: 1.7, margin: "0 0 16px", color: "white", fontWeight: 500 }}>
+                {profile?.identityStatement}
+              </p>
+              <div style={{ height: 1, background: "rgba(255,255,255,0.1)", marginBottom: 16 }} />
+              <div style={cardLabel}>Your Affirmations — Say These Out Loud</div>
+              {profile?.affirmations?.map((a, i) => (
+                <div key={i} style={{
+                  padding: "10px 14px", borderRadius: 12, marginBottom: 8,
+                  background: "rgba(255,255,255,0.05)",
+                  borderLeft: "3px solid rgba(255,140,0,0.6)",
+                  fontSize: 14, color: "white", lineHeight: 1.5
+                }}>{a}</div>
+              ))}
+            </div>
+
+            {/* Today's Mission */}
+            <div style={card}>
+              <div style={cardLabel}>Today's Mission</div>
+              {todayActions.map((action, i) => (
+                <div key={i} style={{
+                  padding: "12px 14px", borderRadius: 12, marginBottom: 8,
+                  background: "rgba(255,255,255,0.05)",
+                  borderLeft: "3px solid rgba(255,46,99,0.6)",
+                  fontSize: 14, color: "rgba(255,255,255,0.85)", lineHeight: 1.55
+                }}>{action}</div>
+              ))}
+            </div>
+
+            {/* Act As If Mode */}
+            <div style={card}>
+              <div style={cardLabel}>Act As If Mode</div>
+              <p style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", marginBottom: 14, lineHeight: 1.6 }}>
+                Activate this when you're ready to show up as the person you're becoming — right now, today, not someday.
+              </p>
+              <button onClick={() => {
+                setActAsIfMode(!actAsIfMode);
+                if (!actAsIfMode) sendMessageWithText("I just activated Act As If mode. Speak to me as if I already am my future self. What do I need to hear right now?");
+              }} style={{
+                width: "100%", padding: "14px", borderRadius: 50, border: "none",
+                background: actAsIfMode ? "rgba(255,255,255,0.08)" : "linear-gradient(45deg,#ff8c00,#ff2e63)",
+                color: actAsIfMode ? "rgba(255,255,255,0.5)" : "white",
+                fontWeight: 700, fontSize: 15, cursor: "pointer"
+              }}>
+                {actAsIfMode ? "Deactivate Mode" : "⚡ Activate Act As If"}
+              </button>
+            </div>
+
+            {/* Reset */}
+            <button onClick={() => {
+              localStorage.removeItem("winnersProfile");
+              localStorage.removeItem("winnersAnswers");
+              setProfile(null); setRawAnswers(null);
+              setMessages([]); setScreen(SCREENS.ASSESSMENT);
+            }} style={{
+              padding: "12px", borderRadius: 50,
+              border: "1px solid rgba(255,255,255,0.12)",
+              background: "transparent", color: "rgba(255,255,255,0.3)",
+              fontSize: 13, cursor: "pointer"
+            }}>
+              Retake Winner's Image Assessment
+            </button>
+          </div>
+        )}
+
+        {/* ---- CHECK IN TAB ---- */}
+        {tab === TABS.CHECKIN && (
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "24px 16px" }}>
+            {checkInDone ? (
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center" }}>
+                <div style={{ fontSize: 56, marginBottom: 16 }}>🔥</div>
+                <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8 }}>Check-in complete</h2>
+                <p style={{ color: "rgba(255,255,255,0.55)", marginBottom: 24, lineHeight: 1.6 }}>
+                  Your coach is reviewing your day. Check your messages for real feedback.
+                </p>
+                <button onClick={() => { setTab(TABS.COACH); setCheckInDone(false); setCheckInStep(0); setCheckIn({ matched: "", proved: "", fell: "", tomorrow: "" }); }} style={{
+                  padding: "14px 32px", borderRadius: 50, border: "none",
+                  background: "linear-gradient(45deg,#ff8c00,#ff2e63)",
+                  color: "white", fontWeight: 700, fontSize: 15, cursor: "pointer"
+                }}>
+                  See Feedback →
+                </button>
+              </div>
+            ) : (
+              <>
+                <div style={{ fontSize: 10, letterSpacing: 3, color: "rgba(255,200,60,0.8)", textTransform: "uppercase", marginBottom: 20 }}>
+                  Daily Identity Check-In • {checkInStep + 1} of 4
+                </div>
+
+                {/* Progress */}
+                <div style={{ height: 2, background: "rgba(255,255,255,0.08)", borderRadius: 2, marginBottom: 24 }}>
+                  <div style={{
+                    height: "100%", width: (checkInStep / 4 * 100) + "%",
+                    background: "linear-gradient(90deg,#ff8c00,#ff2e63)", borderRadius: 2, transition: "width 0.4s"
+                  }} />
+                </div>
+
+                {[
+                  { key: "matched", q: "Did your actions today match the person you're becoming? Be honest." },
+                  { key: "proved", q: "What did you do today that proved you're changing?" },
+                  { key: "fell", q: "Where did you fall short today? No judgment — just honesty." },
+                  { key: "tomorrow", q: "What's the one move you're making tomorrow, no excuses?" }
+                ].filter((_, i) => i === checkInStep).map(item => (
+                  <div key={item.key} style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                    <h2 style={{ fontSize: "clamp(20px, 5vw, 26px)", fontWeight: 800, lineHeight: 1.3, marginBottom: 20 }}>
+                      {item.q}
+                    </h2>
+                    <textarea
+                      value={checkIn[item.key]}
+                      onChange={e => setCheckIn(prev => ({ ...prev, [item.key]: e.target.value }))}
+                      rows={5} placeholder="Be honest..."
+                      style={{
+                        width: "100%", boxSizing: "border-box", padding: "16px",
+                        borderRadius: 16, border: "1px solid rgba(255,255,255,0.12)",
+                        background: "rgba(255,255,255,0.07)", color: "white",
+                        fontSize: 15, resize: "none", outline: "none",
+                        fontFamily: "system-ui, sans-serif", lineHeight: 1.6, marginBottom: 16, flex: 1
+                      }}
+                    />
+                    <button onClick={() => {
+                      if (checkInStep + 1 < 4) setCheckInStep(checkInStep + 1);
+                      else submitCheckIn();
+                    }} style={{
+                      width: "100%", padding: "16px", borderRadius: 50, border: "none",
+                      background: "linear-gradient(45deg,#ff8c00,#ff2e63)",
+                      color: "white", fontWeight: 700, fontSize: 15, cursor: "pointer"
+                    }}>
+                      {checkInStep + 1 === 4 ? "Submit Check-In 🔥" : "Next →"}
+                    </button>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* BOTTOM NAV */}
       <div style={{
-        position: "relative", zIndex: 2,
-        display: "flex", borderTop: "1px solid rgba(255,255,255,0.08)",
-        background: "rgba(0,0,0,0.5)", backdropFilter: "blur(10px)"
+        position: "relative", zIndex: 2, display: "flex",
+        borderTop: "1px solid rgba(255,255,255,0.07)",
+        background: "rgba(0,0,0,0.55)", backdropFilter: "blur(12px)"
       }}>
         {[
-          { key: TABS.CHAT, icon: "💬", label: "Coach" },
-          { key: TABS.FUTURE_SELF, icon: "🏆", label: "Future Self" },
-          { key: TABS.AFFIRMATIONS, icon: "⚡", label: "Affirm" },
+          { key: TABS.COACH, icon: "💬", label: "AI Coach" },
+          { key: TABS.IDENTITY, icon: "🏆", label: "My Image" },
           { key: TABS.CHECKIN, icon: "✅", label: "Check In" }
         ].map(t => (
           <button key={t.key} onClick={() => setTab(t.key)} style={{
             flex: 1, padding: "12px 4px 10px", border: "none",
-            background: "transparent", color: tab === t.key ? "white" : "rgba(255,255,255,0.35)",
-            cursor: "pointer", display: "flex", flexDirection: "column",
-            alignItems: "center", gap: 3
+            background: "transparent",
+            color: tab === t.key ? "white" : "rgba(255,255,255,0.3)",
+            cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 3
           }}>
-            <span style={{ fontSize: 20 }}>{t.icon}</span>
+            <span style={{ fontSize: 22 }}>{t.icon}</span>
             <span style={{
-              fontSize: 10, letterSpacing: 0.5, fontWeight: tab === t.key ? 700 : 400,
+              fontSize: 10, letterSpacing: 0.5,
+              fontWeight: tab === t.key ? 700 : 400,
               borderBottom: tab === t.key ? "2px solid #ff8c00" : "2px solid transparent",
               paddingBottom: 2
             }}>{t.label}</span>
@@ -739,14 +819,19 @@ export default function App() {
 ======================== */
 const iconBtn = {
   width: 44, height: 44, borderRadius: 50, border: "none",
-  background: "rgba(255,255,255,0.1)", color: "white",
+  background: "rgba(255,255,255,0.08)", color: "white",
   cursor: "pointer", fontSize: 18, display: "flex",
   alignItems: "center", justifyContent: "center", flexShrink: 0
 };
 
 const card = {
   padding: "20px 16px", borderRadius: 20,
-  background: "rgba(255,255,255,0.07)",
-  border: "1px solid rgba(255,255,255,0.1)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.09)",
   backdropFilter: "blur(8px)"
+};
+
+const cardLabel = {
+  fontSize: 10, letterSpacing: 3, color: "rgba(255,200,60,0.8)",
+  textTransform: "uppercase", marginBottom: 12
 };
